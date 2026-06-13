@@ -322,11 +322,15 @@ const App = () => {
       try {
         const response = await fetch(CSV_URL, { cache: 'no-store' });
         const text = await response.text();
+        console.log('[DEBUG] Status HTTP:', response.status);
+        console.log('[DEBUG] Tipo conteúdo:', response.headers.get('content-type'));
+        console.log('[DEBUG] Primeiros 500 chars do CSV:', text.slice(0, 500));
         Papa.parse(text.replace(/^﻿/, ''), {
           header: true, skipEmptyLines: 'greedy',
           complete: (result) => {
             console.log('[DEBUG] Total linhas:', result.data?.length);
             console.log('[DEBUG] Colunas:', result.meta?.fields);
+            console.log('[DEBUG] Delimitador detectado:', result.meta?.delimiter);
             console.log('[DEBUG] Primeira linha:', result.data?.[0]);
             // Estrutura da planilha: uma linha por treinamento, turmas em colunas
             // horizontais: "MES T1", "DATA T1", "STATUS T1", "CONVIDADOS T1"...
