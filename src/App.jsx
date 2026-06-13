@@ -325,6 +325,7 @@ const App = () => {
         Papa.parse(text.replace(/^﻿/, ''), {
           header: true, skipEmptyLines: 'greedy',
           complete: (result) => {
+            if (result.data?.[0]) console.log('[DEBUG] Colunas da planilha:', Object.keys(result.data[0]));
             const data = (result.data || [])
               .map((r) => ({
                 diretoria: (r.Diretoria || '').trim(),
