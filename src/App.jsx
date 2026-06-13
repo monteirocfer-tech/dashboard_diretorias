@@ -15,7 +15,8 @@ import {
   X,
 } from 'lucide-react';
 
-const CSV_URL = './base_diretorias.csv';
+// Exportação CSV pública do Google Sheets — a planilha deve estar compartilhada como "qualquer pessoa com o link pode ver"
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/1EAxSRoWOyuCdMA6WsWnkrTbBHQNRkze1/export?format=csv';
 
 const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const FUTURE_MONTHS = ['JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
@@ -322,7 +323,7 @@ const App = () => {
         const response = await fetch(CSV_URL, { cache: 'no-store' });
         const text = await response.text();
         Papa.parse(text.replace(/^﻿/, ''), {
-          header: true, skipEmptyLines: 'greedy', delimiter: ';',
+          header: true, skipEmptyLines: 'greedy',
           complete: (result) => {
             const data = (result.data || [])
               .map((r) => ({
