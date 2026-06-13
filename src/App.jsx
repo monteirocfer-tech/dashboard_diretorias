@@ -15,8 +15,16 @@ import {
   X,
 } from 'lucide-react';
 
-// Exportação CSV pública do Google Sheets — a planilha deve estar compartilhada como "qualquer pessoa com o link pode ver"
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS5n44Z1hgLBK8I3bbExFSyT6jxwQqaB1ogyWQsAlnYGrGFHmrrilaq13t6gBiGYg/pub?output=csv';
+const SHEETS_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS5n44Z1hgLBK8I3bbExFSyT6jxwQqaB1ogyWQsAlnYGrGFHmrrilaq13t6gBiGYg/pub?output=csv';
+const SHEET_GIDS = [
+  708735960,  // Jurídico
+  684448913,  // Comercial
+  320137626,  // Industrial Staff
+  2051407264, // RH
+  23939366,   // Sustentabilidade
+  954572224,  // Supply
+  763204812,  // Financeiro e TI
+];
 
 const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const FUTURE_MONTHS = ['JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
@@ -318,56 +326,59 @@ const App = () => {
   const [activeDetail, setActiveDetail] = useState(null);
 
   useEffect(() => {
+    const parseSheet = (text) => new Promise((resolve) => {
+      Papa.parse(text.replace(/^﻿/, ''), {
+        header: true, skipEmptyLines: 'greedy',
+        complete: resolve,
+      });
+    });
+
     const fetchData = async () => {
       try {
-        const response = await fetch(CSV_URL, { cache: 'no-store' });
-        const text = await response.text();
-        console.log('[DEBUG] Status HTTP:', response.status);
-        console.log('[DEBUG] Tipo conteúdo:', response.headers.get('content-type'));
-        console.log('[DEBUG] Primeiros 500 chars do CSV:', text.slice(0, 500));
-        Papa.parse(text.replace(/^﻿/, ''), {
-          header: true, skipEmptyLines: 'greedy',
-          complete: (result) => {
-            console.log('[DEBUG] Total linhas:', result.data?.length);
-            console.log('[DEBUG] Colunas:', result.meta?.fields);
-            console.log('[DEBUG] Delimitador detectado:', result.meta?.delimiter);
-            console.log('[DEBUG] Primeira linha:', result.data?.[0]);
-            // Estrutura da planilha: uma linha por treinamento, turmas em colunas
-            // horizontais: "MES T1", "DATA T1", "STATUS T1", "CONVIDADOS T1"...
-            const data = [];
-            (result.data || []).forEach((r) => {
-              const diretoria  = (r.Diretoria  || '').trim();
-              const nome       = (r.Nome       || '').trim();
-              const fornecedor = (r.Fornecedor || '').trim();
-              const tipo       = (r.Tipo       || '').trim();
-              const horas      = parseNumber(r.Horas);
-              if (!nome) return;
-              for (let t = 1; t <= 20; t++) {
-                const label = `T${t}`;
-                const mes = (r[`MES ${label}`] || '').trim().toUpperCase();
-                if (!mes) continue;
-                const statusRaw = (r[`STATUS ${label}`] || '').trim();
-                const status    = normalizeStatus(statusRaw);
-                if (!status) continue;
-                const npsRaw = r[`NPS ${label}`];
-                data.push({
-                  diretoria, nome, fornecedor, tipo, horas,
-                  turma:        label,
-                  mes,
-                  data_:        (r[`DATA ${label}`]        || '').trim(),
-                  statusRaw,
-                  status,
-                  convidados:   parseNumber(r[`CONVIDADOS ${label}`]),
-                  presentes:    parseNumber(r[`PRESENTES ${label}`]),
-                  nps:          (npsRaw !== '' && npsRaw !== undefined) ? parseNumber(npsRaw) : null,
-                  justificativa:(r[`JUSTIFICATIVA ${label}`] || '').trim(),
-                });
-              }
-            });
-            setRows(data);
-            setLoading(false);
-          }
+        const results = await Promise.all(
+          SHEET_GIDS.map((gid) =>
+            fetch(`${SHEETS_BASE}&gid=${gid}`, { cache: 'no-store' })
+              .then((r) => r.text())
+              .then(parseSheet)
+          )
+        );
+
+        const data = [];
+        results.forEach((result) => {
+          (result.data || []).forEach((r) => {
+            const diretoria  = (r.Diretoria  || '').trim();
+            const nome       = (r.Nome       || '').trim();
+            const fornecedor = (r.Fornecedor || '').trim();
+            const tipo       = (r.Tipo       || '').trim();
+            const horas      = parseNumber(r.Horas);
+            if (!nome) return;
+            for (let t = 1; t <= 20; t++) {
+              const label = `T${t}`;
+              const mes = (r[`MES ${label}`] || '').trim().toUpperCase();
+              if (!mes) continue;
+              const statusRaw = (r[`STATUS ${label}`] || '').trim();
+              const status    = normalizeStatus(statusRaw);
+              if (!status) continue;
+              const npsRaw = r[`NPS ${label}`];
+              data.push({
+                diretoria, nome, fornecedor, tipo, horas,
+                turma:        label,
+                mes,
+                data_:        (r[`DATA ${label}`]        || '').trim(),
+                statusRaw,
+                status,
+                convidados:   parseNumber(r[`CONVIDADOS ${label}`]),
+                presentes:    parseNumber(r[`PRESENTES ${label}`]),
+                nps:          (npsRaw !== '' && npsRaw !== undefined) ? parseNumber(npsRaw) : null,
+                justificativa:(r[`JUSTIFICATIVA ${label}`] || '').trim(),
+              });
+            }
+          });
         });
+
+        console.log('[DEBUG] Total turmas consolidadas:', data.length);
+        setRows(data);
+        setLoading(false);
       } catch (error) {
         console.error('Erro ao carregar base:', error);
         setLoading(false);
