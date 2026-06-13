@@ -11,46 +11,51 @@ import {
   Hourglass,
   RefreshCw,
   Search,
-  Pause
+  Pause,
+  X,
 } from 'lucide-react';
 
-// ─────────────────────────────────────────────────────────────
-// CONFIG
-// ─────────────────────────────────────────────────────────────
 const CSV_URL = './base_diretorias.csv';
 
 const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const FUTURE_MONTHS = ['JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
-const colors = {
-  magenta: '#d61c59',
-  green: '#2E7D32',
-  orange: '#F57C00',
-  purple: '#7B1FA2',
-  blue: '#0288D1',
-  graphite: '#333333',
-  canceled: '#546E7A',
-  rescheduled: '#6a1b9a',
-  delayed: '#e65100',
-  planned: '#cbd5e1',
-  standby: '#0288D1',
-  navy: '#1e293b',
+// ── PALETA CORPORATIVA ──────────────────────────────────────────
+const C = {
+  purple:       '#7A3EF0',
+  purpleLight:  '#9B6BDB',
+  purpleDark:   '#5B2CB8',
+  purpleBg:     '#f5f0ff',
+  green:        '#2E7D32',
+  greenBg:      '#f0f7f0',
+  orange:       '#E65100',
+  orangeBg:     '#fff4ee',
+  gray800:      '#374151',
+  gray600:      '#6B7280',
+  gray400:      '#9CA3AF',
+  gray200:      '#E5E7EB',
+  gray100:      '#F3F4F6',
+  slate:        '#64748b',
+  navy:         '#0f1e35',
+  navyMid:      '#1e2d4a',
+  standby:      '#94a3b8',
+  canceled:     '#546E7A',
+  rose:         '#e91e63',
+  white:        '#ffffff',
+  bg:           '#f1f5f9',
 };
 
-// ─────────────────────────────────────────────────────────────
-// STATUS NORMALIZATION
-// ─────────────────────────────────────────────────────────────
 const STATUS_ORDER = ['Realizado', 'Em andamento', 'Planejado', 'Cancelado', 'Reagendado', 'Atrasado', 'Stand-by'];
 
 const normalizeStatus = (status) => {
   const raw = (status || '').toString().trim().toLowerCase();
-  if (raw.startsWith('real')) return 'Realizado';
-  if (raw.startsWith('em and')) return 'Em andamento';
-  if (raw.startsWith('plan')) return 'Planejado';
-  if (raw.startsWith('cancel')) return 'Cancelado';
-  if (raw.startsWith('reagend')) return 'Reagendado';
-  if (raw.startsWith('atras')) return 'Atrasado';
-  if (raw.startsWith('stand')) return 'Stand-by';
+  if (raw.startsWith('real'))     return 'Realizado';
+  if (raw.startsWith('em and'))   return 'Em andamento';
+  if (raw.startsWith('plan'))     return 'Planejado';
+  if (raw.startsWith('cancel'))   return 'Cancelado';
+  if (raw.startsWith('reagend'))  return 'Reagendado';
+  if (raw.startsWith('atras'))    return 'Atrasado';
+  if (raw.startsWith('stand'))    return 'Stand-by';
   return null;
 };
 
@@ -59,60 +64,239 @@ const statusMatchesFilter = (status, selected) => {
   return selected.includes(normalizeStatus(status));
 };
 
+const STATUS_META = {
+  'Realizado':    { dot: C.green,       bg: C.green,       label: 'Realizado' },
+  'Em andamento': { dot: C.purple,      bg: C.purple,      label: 'Em andamento' },
+  'Planejado':    { dot: C.gray200,     bg: 'transparent', label: 'Planejado', dashed: true },
+  'Cancelado':    { dot: C.canceled,    bg: C.canceled,    label: 'Cancelado' },
+  'Reagendado':   { dot: C.purpleLight, bg: C.purpleLight, label: 'Reagendado' },
+  'Atrasado':     { dot: C.orange,      bg: C.orange,      label: 'Atrasado' },
+  'Stand-by':     { dot: C.standby,     bg: C.standby,     label: 'Stand-by' },
+};
+
+const STATUS_CARD_META = {
+  'Realizado':    { color: C.green,       softBg: C.greenBg,  softColor: '#1B5E20' },
+  'Em andamento': { color: C.purple,      softBg: C.purpleBg, softColor: C.purpleDark },
+  'Planejado':    { color: C.gray400,     softBg: C.gray100,  softColor: C.gray800 },
+  'Cancelado':    { color: C.canceled,    softBg: '#eceff1',  softColor: '#37474F' },
+  'Reagendado':   { color: C.purpleLight, softBg: '#f3eeff',  softColor: '#6A1B9A' },
+  'Atrasado':     { color: C.orange,      softBg: C.orangeBg, softColor: '#BF360C' },
+  'Stand-by':     { color: C.standby,     softBg: '#f8fafc',  softColor: '#475569' },
+};
+
 const getStatusStyle = (statusNorm) => {
-  switch (statusNorm) {
-    case 'Realizado': return { bg: colors.green, text: 'white' };
-    case 'Em andamento': return { bg: colors.magenta, text: 'white' };
-    case 'Cancelado': return { bg: colors.canceled, text: 'white' };
-    case 'Reagendado': return { bg: colors.rescheduled, text: 'white' };
-    case 'Atrasado': return { bg: colors.delayed, text: 'white' };
-    case 'Stand-by': return { bg: colors.standby, text: 'white' };
-    default: return { bg: 'transparent', text: '#9ca3af', border: '2px dashed #e5e7eb' };
-  }
+  const m = STATUS_META[statusNorm];
+  if (!m) return { bg: 'transparent', text: '#9ca3af', border: `2px dashed ${C.gray200}` };
+  if (m.dashed) return { bg: 'transparent', text: C.gray400, border: `2px dashed ${C.gray200}` };
+  return { bg: m.bg, text: C.white };
 };
 
-const getStatusDotColor = (statusNorm) => {
-  switch (statusNorm) {
-    case 'Realizado': return colors.green;
-    case 'Em andamento': return colors.magenta;
-    case 'Planejado': return colors.planned;
-    case 'Cancelado': return colors.canceled;
-    case 'Reagendado': return colors.rescheduled;
-    case 'Atrasado': return colors.delayed;
-    case 'Stand-by': return colors.standby;
-    default: return '#cbd5e1';
-  }
-};
-
-// ─────────────────────────────────────────────────────────────
-// PARSING HELPERS
-// ─────────────────────────────────────────────────────────────
 const parseNumber = (value) => {
   if (value === null || value === undefined || value === '') return 0;
   const parsed = Number.parseFloat(String(value).replace(',', '.').trim());
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-// ─────────────────────────────────────────────────────────────
-// HEADER
-// ─────────────────────────────────────────────────────────────
+// ── COMPONENTES ─────────────────────────────────────────────────
+
 const DashboardHeader = () => (
-  <header className="dashboard-header md:sticky md:top-0 z-50 shadow-sm">
-    <div className="header-content">
-      <div>
-        <h1 className="dashboard-title">
-          CAPACITAÇÕES <span style={{ color: '#d61c59' }}>CORPORATIVAS</span>
-        </h1>
-        <p className="dashboard-subtitle">Acompanhamento das ações de desenvolvimento corporativo da organização</p>
-      </div>
-    </div>
+  <header style={{
+    backgroundColor: C.white,
+    borderRadius: '0 0 16px 16px',
+    padding: '18px 28px 16px',
+    borderBottom: `3px solid ${C.purple}`,
+    boxShadow: '0 2px 12px rgba(122,62,240,0.08)',
+  }}>
+    <h1 style={{ fontSize: '22px', fontWeight: 900, margin: 0, letterSpacing: '-0.3px', lineHeight: 1, color: C.navy }}>
+      CAPACITAÇÕES <span style={{ color: C.purple }}>CORPORATIVAS</span>
+    </h1>
+    <p style={{ fontSize: '11px', marginTop: '5px', color: C.slate, letterSpacing: '0.04em', fontWeight: 600 }}>
+      Acompanhamento das Ações de Capacitações Corporativas da InterCement
+    </p>
   </header>
 );
 
+const KpiCard = ({ icon: Icon, label, value, accentColor }) => (
+  <div style={{
+    background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`,
+    borderRadius: '16px',
+    padding: '20px 22px',
+    borderBottom: `3px solid ${accentColor}`,
+    position: 'relative',
+    overflow: 'hidden',
+    boxShadow: '0 4px 16px rgba(15,30,53,0.18)',
+    flex: 1,
+  }}>
+    <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.07 }}>
+      <Icon size={60} color="white" />
+    </div>
+    <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#94a3b8', marginBottom: '8px', lineHeight: 1 }}>{label}</p>
+    <p style={{ fontSize: '30px', fontWeight: 900, color: C.white, lineHeight: 1, letterSpacing: '-0.5px' }}>{value}</p>
+  </div>
+);
+
+const CircleProgress = ({ pct, total }) => {
+  const r = 18;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (pct / 100) * circ;
+  const stroke = pct >= 75 ? C.green : pct >= 40 ? C.purple : pct > 0 ? C.orange : C.gray200;
+  return (
+    <svg width="44" height="44" viewBox="0 0 44 44" style={{ flexShrink: 0 }}>
+      <circle cx="22" cy="22" r={r} fill="none" stroke={C.gray200} strokeWidth="3" />
+      {total > 0 && pct > 0 && (
+        <circle cx="22" cy="22" r={r} fill="none" stroke={stroke} strokeWidth="3"
+          strokeDasharray={circ} strokeDashoffset={offset}
+          strokeLinecap="round" transform="rotate(-90 22 22)" />
+      )}
+      <text x="22" y="26" textAnchor="middle" fontSize="9" fontWeight="800"
+        fill={total === 0 ? C.gray200 : C.navy}>{pct}%</text>
+    </svg>
+  );
+};
+
+const MonthCard = ({ mes, total, pct }) => (
+  <div style={{
+    background: C.white,
+    borderRadius: '12px',
+    borderLeft: `3px solid ${total === 0 ? C.gray200 : C.purple}`,
+    padding: '14px 16px',
+    boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+    opacity: total === 0 ? 0.6 : 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div>
+        <p style={{ fontSize: '10px', fontWeight: 800, color: total === 0 ? C.gray400 : C.purple, letterSpacing: '0.14em', marginBottom: '4px' }}>{mes}</p>
+        <p style={{ fontSize: '24px', fontWeight: 900, color: C.navy, lineHeight: 1 }}>{total}</p>
+        <p style={{ fontSize: '10px', color: C.slate, fontWeight: 600, marginTop: '2px' }}>
+          {total === 1 ? 'previsto' : 'previstos'}
+        </p>
+      </div>
+      <CircleProgress pct={pct} total={total} />
+    </div>
+    <div style={{ height: '2px', backgroundColor: C.gray100, borderRadius: '2px', overflow: 'hidden' }}>
+      <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct >= 75 ? C.green : pct >= 40 ? C.purple : pct > 0 ? C.orange : C.gray200, borderRadius: '2px', transition: 'width 0.5s ease' }} />
+    </div>
+  </div>
+);
+
+const FilterDropdown = ({ label, activeCount, filterKey, openFilter, setOpenFilter, children }) => (
+  <div style={{ position: 'relative' }}>
+    <button
+      onClick={(e) => { e.stopPropagation(); setOpenFilter(openFilter === filterKey ? null : filterKey); }}
+      style={{
+        background: activeCount > 0 ? C.purpleBg : 'transparent',
+        border: `1px solid ${activeCount > 0 ? C.purpleLight : C.gray200}`,
+        borderRadius: '8px',
+        padding: '5px 10px',
+        fontSize: '11px',
+        fontWeight: 700,
+        color: activeCount > 0 ? C.purpleDark : C.gray600,
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}{activeCount > 0 ? ` (${activeCount})` : ''}
+      <ChevronDown size={13} />
+    </button>
+    {openFilter === filterKey && (
+      <div onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50,
+          background: C.white, border: `1px solid ${C.gray200}`, borderRadius: '12px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: '10px',
+          minWidth: '200px', maxHeight: '260px', overflowY: 'auto',
+        }}>
+        {children}
+      </div>
+    )}
+  </div>
+);
+
+const CheckItem = ({ label, checked, onChange }) => (
+  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '5px 2px', fontSize: '12px', cursor: 'pointer', color: C.gray800, fontWeight: 500 }}>
+    <input type="checkbox" checked={checked} onChange={onChange} style={{ accentColor: C.purple }} />
+    {label}
+  </label>
+);
+
+const DetailPanel = ({ detail, onClose }) => {
+  if (!detail) return null;
+  const { training, cls } = detail;
+  const meta = STATUS_META[cls.status] || {};
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(15,30,53,0.25)', backdropFilter: 'blur(2px)' }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'fixed', top: '80px', right: '24px', width: '300px',
+          background: C.white, borderRadius: '18px',
+          boxShadow: '0 12px 48px rgba(15,30,53,0.2)',
+          border: `1px solid ${C.gray200}`, overflow: 'hidden',
+        }}
+      >
+        <div style={{ padding: '16px 20px 14px', borderBottom: `1px solid ${C.gray100}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <p style={{ fontSize: '11px', fontWeight: 800, color: C.slate, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Detalhes da Turma</p>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.gray400, padding: '2px' }}>
+            <X size={16} />
+          </button>
+        </div>
+        <div style={{ padding: '18px 20px' }}>
+          <p style={{ fontSize: '14px', fontWeight: 800, color: C.navy, marginBottom: '10px', lineHeight: 1.3 }}>{training.nome}</p>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '5px',
+            fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em',
+            color: C.white, backgroundColor: meta.bg || C.gray400,
+            padding: '3px 10px', borderRadius: '20px', marginBottom: '16px',
+          }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.7)', display: 'inline-block' }} />
+            {cls.status}
+          </span>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {cls.turma && (
+              <div>
+                <p style={{ fontSize: '9px', fontWeight: 800, color: C.gray400, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '2px' }}>Turma</p>
+                <p style={{ fontSize: '12px', color: C.navy, fontWeight: 600 }}>{cls.turma}</p>
+              </div>
+            )}
+            {cls.data_ && (
+              <div>
+                <p style={{ fontSize: '9px', fontWeight: 800, color: C.gray400, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '2px' }}>
+                  {cls.status === 'Reagendado' ? 'Data original' : 'Data'}
+                </p>
+                <p style={{ fontSize: '12px', color: C.navy, fontWeight: 600 }}>{cls.data_}</p>
+              </div>
+            )}
+            <div>
+              <p style={{ fontSize: '9px', fontWeight: 800, color: C.gray400, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '2px' }}>Justificativa</p>
+              {cls.justificativa
+                ? <p style={{ fontSize: '12px', color: C.gray800, lineHeight: 1.5 }}>{cls.justificativa}</p>
+                : <p style={{ fontSize: '12px', color: C.gray400, fontStyle: 'italic' }}>Sem justificativa registrada.</p>
+              }
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: '10px 20px 14px' }}>
+          <p style={{ fontSize: '10px', color: C.gray400, textAlign: 'center' }}>Clique fora para fechar</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── APP ─────────────────────────────────────────────────────────
 const App = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [filterDiretorias, setFilterDiretorias] = useState([]);
   const [filterFornecedores, setFilterFornecedores] = useState([]);
   const [fornecedorSearch, setFornecedorSearch] = useState('');
@@ -122,16 +306,13 @@ const App = () => {
   const [openFilter, setOpenFilter] = useState(null);
   const [activeDetail, setActiveDetail] = useState(null);
 
-  // ── LOAD DATA ──
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch(CSV_URL, { cache: 'no-store' });
         const text = await response.text();
-        Papa.parse(text.replace(/^\uFEFF/, ''), {
-          header: true,
-          skipEmptyLines: 'greedy',
-          delimiter: ';',
+        Papa.parse(text.replace(/^﻿/, ''), {
+          header: true, skipEmptyLines: 'greedy', delimiter: ';',
           complete: (result) => {
             const data = (result.data || [])
               .map((r) => ({
@@ -169,21 +350,14 @@ const App = () => {
     return () => window.removeEventListener('click', handleGlobalClick);
   }, []);
 
-  const toggleMulti = (value, selected, setSelected) => {
+  const toggleMulti = (value, selected, setSelected) =>
     setSelected(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
-  };
 
   const resetFilters = () => {
-    setFilterDiretorias([]);
-    setFilterFornecedores([]);
-    setFornecedorSearch('');
-    setFilterTipos([]);
-    setFilterMonths([]);
-    setFilterStatuses([]);
-    setOpenFilter(null);
+    setFilterDiretorias([]); setFilterFornecedores([]); setFornecedorSearch('');
+    setFilterTipos([]); setFilterMonths([]); setFilterStatuses([]); setOpenFilter(null);
   };
 
-  // ── FILTER OPTIONS ──
   const diretorias = useMemo(() => [...new Set(rows.map((r) => r.diretoria))].filter(Boolean).sort(), [rows]);
   const fornecedores = useMemo(() => [...new Set(rows.map((r) => r.fornecedor))].filter(Boolean).sort(), [rows]);
   const tipos = useMemo(() => [...new Set(rows.map((r) => r.tipo))].filter(Boolean).sort(), [rows]);
@@ -194,18 +368,14 @@ const App = () => {
     return fornecedores.filter((f) => f.toLowerCase().includes(q));
   }, [fornecedores, fornecedorSearch]);
 
-  // ── FILTERED ROWS ──
-  const filteredRows = useMemo(() => {
-    return rows.filter((r) =>
-      (filterDiretorias.length === 0 || filterDiretorias.includes(r.diretoria)) &&
-      (filterFornecedores.length === 0 || filterFornecedores.includes(r.fornecedor)) &&
-      (filterTipos.length === 0 || filterTipos.includes(r.tipo)) &&
-      (filterMonths.length === 0 || filterMonths.includes(r.mes)) &&
-      statusMatchesFilter(r.statusRaw, filterStatuses)
-    );
-  }, [rows, filterDiretorias, filterFornecedores, filterTipos, filterMonths, filterStatuses]);
+  const filteredRows = useMemo(() => rows.filter((r) =>
+    (filterDiretorias.length === 0 || filterDiretorias.includes(r.diretoria)) &&
+    (filterFornecedores.length === 0 || filterFornecedores.includes(r.fornecedor)) &&
+    (filterTipos.length === 0 || filterTipos.includes(r.tipo)) &&
+    (filterMonths.length === 0 || filterMonths.includes(r.mes)) &&
+    statusMatchesFilter(r.statusRaw, filterStatuses)
+  ), [rows, filterDiretorias, filterFornecedores, filterTipos, filterMonths, filterStatuses]);
 
-  // ── STATUS SUMMARY ──
   const statusCounts = useMemo(() => {
     const counts = {};
     STATUS_ORDER.forEach((s) => { counts[s] = 0; });
@@ -215,42 +385,24 @@ const App = () => {
 
   const totalCount = filteredRows.length || 1;
 
-  // ── KPIs: Pessoas Impactadas / Horas / Hora-Pessoa ──
   const realizados = useMemo(() => filteredRows.filter((r) => r.status === 'Realizado'), [filteredRows]);
   const pessoasImpactadas = useMemo(() => realizados.reduce((acc, r) => acc + (r.presentes || 0), 0), [realizados]);
-  const horasFormacao = useMemo(
-    () => realizados.reduce((acc, r) => acc + (r.presentes || 0) * (r.horas || 0), 0),
-    [realizados]
-  );
+  const horasFormacao = useMemo(() => realizados.reduce((acc, r) => acc + (r.presentes || 0) * (r.horas || 0), 0), [realizados]);
   const horaPorPessoa = pessoasImpactadas > 0 ? (horasFormacao / pessoasImpactadas) : 0;
 
-  // ── PLANEJAMENTO PRÓXIMOS MESES (heatmap) ──
-  const planningData = useMemo(() => {
-    return FUTURE_MONTHS.map((m) => {
-      const items = filteredRows.filter((r) => r.mes === m);
-      const total = items.length;
-      const concluidos = items.filter((r) => r.status === 'Realizado').length;
-      const pct = total > 0 ? Math.round((concluidos / total) * 100) : 0;
-      return { mes: m, total, concluidos, pct };
-    });
-  }, [filteredRows]);
+  const planningData = useMemo(() => FUTURE_MONTHS.map((m) => {
+    const items = filteredRows.filter((r) => r.mes === m);
+    const total = items.length;
+    const concluidos = items.filter((r) => r.status === 'Realizado').length;
+    const pct = total > 0 ? Math.round((concluidos / total) * 100) : 0;
+    return { mes: m, total, concluidos, pct };
+  }), [filteredRows]);
 
-  const heatColor = (pct, total) => {
-    if (total === 0) return '#f1f5f9';
-    if (pct >= 75) return colors.green;
-    if (pct >= 40) return '#a3d977';
-    if (pct > 0) return colors.orange;
-    return '#fde68a';
-  };
-
-  // ── CALENDÁRIO: agrupar por treinamento ──
   const calendarRows = useMemo(() => {
     const grouped = new Map();
     filteredRows.forEach((r) => {
       const key = `${r.diretoria}|||${r.nome}`;
-      if (!grouped.has(key)) {
-        grouped.set(key, { diretoria: r.diretoria, nome: r.nome, byMonth: {} });
-      }
+      if (!grouped.has(key)) grouped.set(key, { diretoria: r.diretoria, nome: r.nome, byMonth: {} });
       const entry = grouped.get(key);
       if (r.mes) {
         if (!entry.byMonth[r.mes]) entry.byMonth[r.mes] = [];
@@ -264,378 +416,222 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f1f5f9]">
-        <RefreshCw className="animate-spin text-pink-500" size={48} />
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
+        <RefreshCw size={40} style={{ color: C.purple, animation: 'spin 1s linear infinite' }} />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#f1f5f9] text-[#333333] font-sans selection:bg-pink-100 relative pb-20">
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/p6.png')" }}
-      ></div>
+  const hasAnyFilter = filterDiretorias.length + filterFornecedores.length + filterTipos.length + filterMonths.length + filterStatuses.length > 0;
 
-      <div className="max-w-[1180px] mx-auto px-4 sm:px-6 pb-7 pt-4 box-border">
-        {/* ── HEADER ── */}
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: C.bg, color: C.navy, fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '0 20px 60px', boxSizing: 'border-box' }}>
+
+        {/* HEADER */}
         <DashboardHeader />
 
-        {/* ── STATUS GERAL + KPIs ── */}
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-3 mb-3 mt-3">
+        {/* STATUS GERAL + KPIs */}
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', margin: '12px 0' }}>
+
           {/* STATUS GERAL */}
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50">
-              <p className="text-[11px] text-slate-600 uppercase font-black tracking-[0.16em] leading-none">Status Geral do Programa</p>
+          <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+            <div style={{ padding: '10px 18px', borderBottom: `1px solid ${C.gray100}`, background: C.gray100 }}>
+              <p style={{ fontSize: '10px', color: C.slate, textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.16em', lineHeight: 1 }}>Status Geral do Programa</p>
             </div>
-            <div className="p-3.5">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div style={{ padding: '14px 18px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                 {STATUS_ORDER.map((s) => {
                   const count = statusCounts[s] || 0;
                   const pct = Math.round((count / totalCount) * 100);
-                  const dot = getStatusDotColor(s);
+                  const meta = STATUS_CARD_META[s];
                   return (
-                    <div key={s} className="rounded-lg border border-gray-100 p-2.5 bg-slate-50/70">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: dot }}></span>
-                        <span className="text-[10px] font-black uppercase tracking-wide text-slate-500 leading-none">{s}</span>
+                    <div key={s} style={{
+                      borderRadius: '12px', border: `1px solid ${C.gray200}`,
+                      padding: '12px 14px', backgroundColor: C.gray100,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: meta.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.slate, lineHeight: 1 }}>{s}</span>
                       </div>
-                      <p className="text-2xl font-black leading-none" style={{ color: dot === colors.planned ? '#94a3b8' : dot }}>{pct}%</p>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400 mt-1">{count} ações</p>
+                      <p style={{ fontSize: '22px', fontWeight: 900, lineHeight: 1, color: pct === 0 ? C.gray400 : meta.softColor }}>{pct}%</p>
+                      <p style={{ fontSize: '10px', fontWeight: 600, color: C.gray400, marginTop: '3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{count} ações</p>
                     </div>
                   );
                 })}
               </div>
-              <div className="mt-3">
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden flex">
-                  {STATUS_ORDER.map((s) => {
-                    const count = statusCounts[s] || 0;
-                    const pct = (count / totalCount) * 100;
-                    if (pct === 0) return null;
-                    return (
-                      <div
-                        key={`bar-${s}`}
-                        style={{ width: `${pct}%`, backgroundColor: getStatusDotColor(s) }}
-                        className="h-full"
-                        title={`${s}: ${count} (${Math.round(pct)}%)`}
-                      />
-                    );
-                  })}
-                </div>
+
+              {/* Progress bar */}
+              <div style={{ marginTop: '12px', height: '4px', backgroundColor: C.gray200, borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
+                {STATUS_ORDER.map((s) => {
+                  const count = statusCounts[s] || 0;
+                  const pct = (count / totalCount) * 100;
+                  if (pct === 0) return null;
+                  return (
+                    <div key={`bar-${s}`}
+                      style={{ width: `${pct}%`, backgroundColor: STATUS_CARD_META[s].color, height: '100%' }}
+                      title={`${s}: ${count} (${Math.round(pct)}%)`}
+                    />
+                  );
+                })}
               </div>
             </div>
           </div>
 
           {/* KPIs */}
-          <div className="flex flex-col gap-2">
-            <div className="bg-[#1e293b] rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm">
-              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                <Users size={18} className="text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-wide text-slate-300 leading-none">Pessoas impactadas</p>
-                <p className="text-xl font-black text-white leading-tight mt-0.5">{pessoasImpactadas}</p>
-              </div>
-            </div>
-            <div className="bg-[#1e293b] rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm">
-              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                <Clock size={18} className="text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-wide text-slate-300 leading-none">Horas de formação</p>
-                <p className="text-xl font-black text-white leading-tight mt-0.5">{Math.round(horasFormacao)}</p>
-              </div>
-            </div>
-            <div className="bg-[#1e293b] rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm">
-              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                <Hourglass size={18} className="text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-wide text-slate-300 leading-none">Hora / pessoa</p>
-                <p className="text-xl font-black text-white leading-tight mt-0.5">{horaPorPessoa.toFixed(1)}h</p>
-              </div>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <KpiCard icon={Users}    label="Pessoas Impactadas"    value={pessoasImpactadas}              accentColor={C.orange} />
+            <KpiCard icon={Clock}    label="Horas de Formação"     value={Math.round(horasFormacao)}      accentColor={C.purple} />
+            <KpiCard icon={Hourglass} label="Hora / Pessoa"        value={`${horaPorPessoa.toFixed(1)}h`} accentColor="#0288D1" />
           </div>
         </div>
 
-        {/* ── FILTROS ── */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 mb-3 sticky top-0 md:top-[76px] z-40 bg-[#f1f5f9] py-2 shadow-[0_4px_12px_rgba(0,0,0,0.07)]">
-          <div className="bg-white w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-1.5 rounded-2xl sm:rounded-full shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center gap-2.5 relative flex-wrap">
-            <div className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest sm:mr-1">
-              <Filter size={14} /> Filtros:
+        {/* FILTROS */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 40,
+          backgroundColor: C.bg, padding: '8px 0',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+        }}>
+          <div style={{
+            background: C.white, borderRadius: '12px', border: `1px solid ${C.gray200}`,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            padding: '8px 14px',
+            display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
+          }}>
+            {/* Label */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '10px', fontWeight: 800, color: C.slate, textTransform: 'uppercase', letterSpacing: '0.12em', marginRight: '4px', flexShrink: 0 }}>
+              <Filter size={12} style={{ color: C.purple }} /> Filtros
             </div>
 
-            {/* DIRETORIA */}
-            <div className="relative w-full sm:w-auto">
-              <button
-                onClick={(e) => { e.stopPropagation(); setOpenFilter(openFilter === 'diretoria' ? null : 'diretoria'); }}
-                className="bg-transparent text-[11px] font-black uppercase tracking-wide outline-none cursor-pointer sm:border-r sm:pr-3 flex items-center justify-between gap-1 w-full sm:w-auto"
-              >
-                Diretoria{filterDiretorias.length > 0 ? `: ${filterDiretorias.length}` : ''}
-                <ChevronDown size={15} className="text-gray-500" />
-              </button>
-              {openFilter === 'diretoria' && (
-                <div onClick={(e) => e.stopPropagation()} className="z-20 mt-2 sm:absolute sm:top-8 sm:left-0 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-full sm:min-w-56 max-h-64 overflow-y-auto">
-                  {diretorias.map((d) => (
-                    <label key={d} className="flex items-center gap-2 py-1 text-xs cursor-pointer">
-                      <input type="checkbox" checked={filterDiretorias.includes(d)} onChange={() => toggleMulti(d, filterDiretorias, setFilterDiretorias)} />
-                      <span>{d}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
+            <FilterDropdown label="Diretoria" activeCount={filterDiretorias.length} filterKey="diretoria" openFilter={openFilter} setOpenFilter={setOpenFilter}>
+              {diretorias.map((d) => <CheckItem key={d} label={d} checked={filterDiretorias.includes(d)} onChange={() => toggleMulti(d, filterDiretorias, setFilterDiretorias)} />)}
+            </FilterDropdown>
 
-            {/* FORNECEDOR / FACILITADOR */}
-            <div className="relative w-full sm:w-auto">
-              <button
-                onClick={(e) => { e.stopPropagation(); setOpenFilter(openFilter === 'fornecedor' ? null : 'fornecedor'); }}
-                className="bg-transparent text-[11px] font-black uppercase tracking-wide outline-none cursor-pointer sm:border-r sm:pr-3 flex items-center justify-between gap-1 w-full sm:w-auto"
-              >
-                Fornecedor/Facilitador{filterFornecedores.length > 0 ? `: ${filterFornecedores.length}` : ''}
-                <ChevronDown size={15} className="text-gray-500" />
+            <FilterDropdown label="Fornecedor / Facilitador" activeCount={filterFornecedores.length} filterKey="fornecedor" openFilter={openFilter} setOpenFilter={setOpenFilter}>
+              <div style={{ position: 'relative', marginBottom: '8px' }}>
+                <Search size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: C.gray400 }} />
+                <input
+                  type="text" value={fornecedorSearch}
+                  onChange={(e) => setFornecedorSearch(e.target.value)}
+                  placeholder="Buscar..."
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ width: '100%', fontSize: '12px', border: `1px solid ${C.gray200}`, borderRadius: '8px', padding: '6px 8px 6px 26px', outline: 'none', boxSizing: 'border-box', color: C.navy }}
+                />
+              </div>
+              {fornecedoresFiltered.length === 0
+                ? <p style={{ fontSize: '11px', color: C.gray400, padding: '4px' }}>Nenhum resultado.</p>
+                : fornecedoresFiltered.map((f) => <CheckItem key={f} label={f} checked={filterFornecedores.includes(f)} onChange={() => toggleMulti(f, filterFornecedores, setFilterFornecedores)} />)
+              }
+            </FilterDropdown>
+
+            <FilterDropdown label="Tipo" activeCount={filterTipos.length} filterKey="tipo" openFilter={openFilter} setOpenFilter={setOpenFilter}>
+              {tipos.map((t) => <CheckItem key={t} label={t} checked={filterTipos.includes(t)} onChange={() => toggleMulti(t, filterTipos, setFilterTipos)} />)}
+            </FilterDropdown>
+
+            <FilterDropdown label="Mês" activeCount={filterMonths.length} filterKey="mes" openFilter={openFilter} setOpenFilter={setOpenFilter}>
+              {MONTHS.map((m) => <CheckItem key={m} label={m} checked={filterMonths.includes(m)} onChange={() => toggleMulti(m, filterMonths, setFilterMonths)} />)}
+            </FilterDropdown>
+
+            <FilterDropdown label="Status" activeCount={filterStatuses.length} filterKey="status" openFilter={openFilter} setOpenFilter={setOpenFilter}>
+              {STATUS_ORDER.map((s) => <CheckItem key={s} label={s} checked={filterStatuses.includes(s)} onChange={() => toggleMulti(s, filterStatuses, setFilterStatuses)} />)}
+            </FilterDropdown>
+
+            {hasAnyFilter && (
+              <button onClick={resetFilters} style={{
+                marginLeft: '4px', fontSize: '10px', fontWeight: 700, color: C.slate,
+                background: 'none', border: 'none', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.08em',
+                display: 'flex', alignItems: 'center', gap: '3px',
+              }}>
+                <X size={11} /> Limpar
               </button>
-              {openFilter === 'fornecedor' && (
-                <div onClick={(e) => e.stopPropagation()} className="z-20 mt-2 sm:absolute sm:top-8 sm:left-0 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-full sm:min-w-64 max-h-72 overflow-y-auto">
-                  <div className="relative mb-2">
-                    <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      value={fornecedorSearch}
-                      onChange={(e) => setFornecedorSearch(e.target.value)}
-                      placeholder="Buscar fornecedor ou facilitador..."
-                      className="w-full text-xs border border-gray-200 rounded-lg pl-7 pr-2 py-1.5 outline-none focus:border-pink-300"
-                      onClick={(e) => e.stopPropagation()}
-                    />
+            )}
+
+            {/* Legenda */}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {STATUS_ORDER.map((s) => {
+                const meta = STATUS_CARD_META[s];
+                return (
+                  <div key={`legend-${s}`} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.gray600 }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: meta.color, flexShrink: 0, opacity: s === 'Planejado' ? 0.4 : 1 }} />
+                    {s}
                   </div>
-                  {fornecedoresFiltered.length === 0 && (
-                    <p className="text-[11px] text-gray-400 py-1">Nenhum fornecedor encontrado.</p>
-                  )}
-                  {fornecedoresFiltered.map((f) => (
-                    <label key={f} className="flex items-center gap-2 py-1 text-xs cursor-pointer">
-                      <input type="checkbox" checked={filterFornecedores.includes(f)} onChange={() => toggleMulti(f, filterFornecedores, setFilterFornecedores)} />
-                      <span>{f}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* TIPO */}
-            <div className="relative w-full sm:w-auto">
-              <button
-                onClick={(e) => { e.stopPropagation(); setOpenFilter(openFilter === 'tipo' ? null : 'tipo'); }}
-                className="bg-transparent text-[11px] font-black uppercase tracking-wide outline-none cursor-pointer sm:border-r sm:pr-3 flex items-center justify-between gap-1 w-full sm:w-auto"
-              >
-                Tipo{filterTipos.length > 0 ? `: ${filterTipos.length}` : ''}
-                <ChevronDown size={15} className="text-gray-500" />
-              </button>
-              {openFilter === 'tipo' && (
-                <div onClick={(e) => e.stopPropagation()} className="z-20 mt-2 sm:absolute sm:top-8 sm:left-0 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-full sm:min-w-40 max-h-64 overflow-y-auto">
-                  {tipos.map((t) => (
-                    <label key={t} className="flex items-center gap-2 py-1 text-xs cursor-pointer">
-                      <input type="checkbox" checked={filterTipos.includes(t)} onChange={() => toggleMulti(t, filterTipos, setFilterTipos)} />
-                      <span>{t}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* MÊS */}
-            <div className="relative w-full sm:w-auto">
-              <button
-                onClick={(e) => { e.stopPropagation(); setOpenFilter(openFilter === 'mes' ? null : 'mes'); }}
-                className="bg-transparent text-[11px] font-black uppercase tracking-wide outline-none cursor-pointer sm:border-r sm:pr-3 flex items-center justify-between gap-1 w-full sm:w-auto"
-              >
-                Mês{filterMonths.length > 0 ? `: ${filterMonths.length}` : ''}
-                <ChevronDown size={15} className="text-gray-500" />
-              </button>
-              {openFilter === 'mes' && (
-                <div onClick={(e) => e.stopPropagation()} className="z-20 mt-2 sm:absolute sm:top-8 sm:left-0 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-full sm:min-w-48 max-h-64 overflow-y-auto">
-                  {MONTHS.map((m) => (
-                    <label key={m} className="flex items-center gap-2 py-1 text-xs cursor-pointer">
-                      <input type="checkbox" checked={filterMonths.includes(m)} onChange={() => toggleMulti(m, filterMonths, setFilterMonths)} />
-                      <span>{m}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* STATUS */}
-            <div className="relative w-full sm:w-auto">
-              <button
-                onClick={(e) => { e.stopPropagation(); setOpenFilter(openFilter === 'status' ? null : 'status'); }}
-                className="bg-transparent text-[11px] font-black uppercase tracking-wide outline-none cursor-pointer w-full sm:w-auto flex items-center justify-between gap-1"
-              >
-                Status{filterStatuses.length > 0 ? `: ${filterStatuses.length}` : ''}
-                <ChevronDown size={15} className="text-gray-500" />
-              </button>
-              {openFilter === 'status' && (
-                <div onClick={(e) => e.stopPropagation()} className="z-20 mt-2 sm:absolute sm:top-8 sm:left-0 bg-white border border-gray-200 rounded-xl shadow-lg p-3 w-full sm:min-w-48 max-h-64 overflow-y-auto">
-                  {STATUS_ORDER.map((s) => (
-                    <label key={s} className="flex items-center gap-2 py-1 text-xs cursor-pointer">
-                      <input type="checkbox" checked={filterStatuses.includes(s)} onChange={() => toggleMulti(s, filterStatuses, setFilterStatuses)} />
-                      <span>{s}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <button onClick={resetFilters} className="sm:ml-2 text-[10px] font-black uppercase tracking-wide text-slate-500 hover:text-slate-700 text-left">
-              Limpar filtros
-            </button>
-          </div>
-
-          {/* Legend */}
-          <div className="sm:ml-auto flex items-center gap-3.5 flex-wrap">
-            {STATUS_ORDER.map((s) => (
-              <div key={`legend-${s}`} className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
-                <div
-                  className="w-2 h-2 rounded-sm"
-                  style={
-                    s === 'Planejado'
-                      ? { border: '1px solid #cbd5e1' }
-                      : { backgroundColor: getStatusDotColor(s) }
-                  }
-                ></div>
-                {s}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── PLANEJAMENTO PRÓXIMOS MESES (heatmap) ── */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-3">
-          <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50">
-            <p className="text-[11px] text-slate-600 uppercase font-black tracking-[0.16em] leading-none">Planejamento dos próximos meses</p>
-          </div>
-          <div className="p-3.5">
-            <div className="grid grid-cols-3 sm:grid-cols-7 gap-2.5">
-              {planningData.map((d) => (
-                <div
-                  key={d.mes}
-                  className="rounded-lg p-2.5 flex flex-col items-center justify-center min-h-[88px]"
-                  style={{ backgroundColor: heatColor(d.pct, d.total), opacity: d.total === 0 ? 0.5 : 1 }}
-                >
-                  <span className="text-[10px] font-black uppercase tracking-wide text-white/90 mb-1">{d.mes}</span>
-                  <span className="text-2xl font-black text-white leading-none">{d.total}</span>
-                  <span className="text-[10px] font-bold text-white/90 mt-1">{d.pct}% concl.</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-3 mt-3 flex-wrap">
-              <span className="text-[10px] font-black uppercase text-slate-400">Conclusão:</span>
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: colors.green }}></span> Alta (75%+)
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#a3d977' }}></span> Média (40-74%)
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: colors.orange }}></span> Baixa (1-39%)
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#fde68a' }}></span> Sem realizações
-              </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* ── CALENDÁRIO OPERACIONAL ── */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+        {/* PLANEJAMENTO DOS PRÓXIMOS MESES */}
+        <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden', margin: '12px 0' }}>
+          <div style={{ padding: '10px 18px', borderBottom: `1px solid ${C.gray100}`, background: C.gray100 }}>
+            <p style={{ fontSize: '10px', color: C.slate, textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.16em', lineHeight: 1 }}>Planejamento dos Próximos Meses</p>
+          </div>
+          <div style={{ padding: '14px 18px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '10px' }}>
+              {planningData.map((d) => <MonthCard key={d.mes} {...d} />)}
+            </div>
+          </div>
+        </div>
+
+        {/* CALENDÁRIO OPERACIONAL */}
+        <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="text-white" style={{ backgroundColor: colors.navy }}>
-                  <th className="p-3 text-[9px] uppercase font-black tracking-widest w-24 text-center sticky top-0 z-10">Diretoria</th>
-                  <th className="p-3 text-[9px] uppercase font-black tracking-widest min-w-[240px] sticky top-0 z-10">Capacitação</th>
+                <tr style={{ backgroundColor: C.navy, color: C.white }}>
+                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', width: '80px', textAlign: 'center' }}>Unid.</th>
+                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', minWidth: '220px', textAlign: 'left' }}>Capacitação Técnica</th>
                   {MONTHS.map((m) => (
-                    <th key={m} className="p-2 text-[9px] uppercase font-black tracking-wide text-center w-[78px] min-w-[78px] max-w-[78px] sticky top-0 z-10">{m}</th>
+                    <th key={m} style={{ padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center', width: '78px', minWidth: '78px' }}>{m}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {calendarRows.map((training, idx) => (
-                  <tr key={`${training.diretoria}-${idx}`} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-3 border-r border-gray-50 text-center">
-                      <span className="text-[10px] font-black text-gray-500 uppercase">{training.diretoria}</span>
+                  <tr key={`${training.diretoria}-${idx}`} style={{ borderBottom: `1px solid ${C.gray100}` }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fafbff'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.white}
+                  >
+                    <td style={{ padding: '10px 8px', borderRight: `1px solid ${C.gray100}`, textAlign: 'center' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: C.slate, textTransform: 'uppercase' }}>{training.diretoria}</span>
                     </td>
-                    <td className="p-3 border-r border-gray-50">
-                      <span className="text-[13px] font-extrabold text-slate-800">{training.nome}</span>
+                    <td style={{ padding: '10px 12px', borderRight: `1px solid ${C.gray100}` }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: C.navy }}>{training.nome}</span>
                     </td>
                     {MONTHS.map((m) => {
                       const cellItems = training.byMonth[m] || [];
                       return (
-                        <td key={m} className="py-2.5 px-2 align-middle overflow-visible text-center border-l border-gray-50 w-[78px] min-w-[78px] max-w-[78px]">
-                          <div className="flex flex-col items-center gap-2 min-h-[46px] overflow-visible">
+                        <td key={m} style={{ padding: '6px 4px', textAlign: 'center', borderLeft: `1px solid ${C.gray100}`, width: '78px', minWidth: '78px', verticalAlign: 'middle' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minHeight: '40px', justifyContent: 'center' }}>
                             {cellItems.map((cls, ci) => {
                               const style = getStatusStyle(cls.status);
                               const hasDetail = ['Atrasado', 'Reagendado', 'Stand-by'].includes(cls.status);
                               const detailId = `${idx}-${m}-${ci}`;
-                              const isOpen = activeDetail?.id === detailId;
                               return (
-                                <div key={detailId} className="relative">
-                                  <div
-                                    className={`inline-flex flex-col items-center justify-center min-w-[64px] max-w-[78px] min-h-[40px] py-1.5 px-2 rounded shadow-sm transition-transform hover:scale-[1.02] ${hasDetail ? 'cursor-pointer' : ''}`}
-                                    style={{
-                                      backgroundColor: style.bg,
-                                      color: style.text,
-                                      border: style.border || 'none',
-                                      lineHeight: 1.1,
-                                    }}
-                                    onClick={hasDetail ? (e) => {
-                                      e.stopPropagation();
-                                      setActiveDetail(isOpen ? null : { id: detailId, training, cls });
-                                    } : undefined}
-                                  >
-                                    <span className="text-[9px] font-black leading-none">{cls.turma}</span>
-                                    {cls.status === 'Reagendado' && (
-                                      <div className="mt-1 flex items-center gap-1">
-                                        <CalendarClock size={10} />
-                                      </div>
-                                    )}
-                                    {cls.status === 'Atrasado' && (
-                                      <div className="mt-1 flex items-center gap-1">
-                                        <AlertTriangle size={10} />
-                                      </div>
-                                    )}
-                                    {cls.status === 'Stand-by' && (
-                                      <div className="mt-1 flex items-center gap-1">
-                                        <Pause size={10} />
-                                      </div>
-                                    )}
-                                    {cls.status === 'Cancelado' && (
-                                      <div className="mt-1 flex items-center gap-1">
-                                        <XCircle size={10} />
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {isOpen && (
-                                    <div
-                                      className="absolute z-50 bottom-full left-1/2 mb-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl p-3 text-left"
-                                      style={{ transform: 'translateX(-50%)' }}
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <div className="flex items-center gap-1.5 mb-2">
-                                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: style.bg }}></div>
-                                        <span className="text-[10px] font-black text-slate-700 uppercase tracking-wide">{cls.status} · {cls.turma}</span>
-                                      </div>
-                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Treinamento</p>
-                                      <p className="text-xs text-slate-700 leading-relaxed mb-2">{training.nome}</p>
-                                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Justificativa</p>
-                                      {cls.justificativa
-                                        ? <p className="text-xs text-slate-700 leading-relaxed">{cls.justificativa}</p>
-                                        : <p className="text-xs text-gray-400 italic">Sem justificativa registrada.</p>
-                                      }
-                                      <div className="mt-2 pt-2 border-t border-gray-100">
-                                        <span className="text-[9px] text-gray-400">Clique fora para fechar</span>
-                                      </div>
-                                    </div>
-                                  )}
+                                <div
+                                  key={detailId}
+                                  onClick={hasDetail ? (e) => {
+                                    e.stopPropagation();
+                                    setActiveDetail(activeDetail?.id === detailId ? null : { id: detailId, training, cls });
+                                  } : undefined}
+                                  style={{
+                                    display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                    minWidth: '62px', maxWidth: '74px', minHeight: '38px',
+                                    padding: '5px 6px', borderRadius: '6px',
+                                    backgroundColor: style.bg, color: style.text,
+                                    border: style.border || 'none',
+                                    cursor: hasDetail ? 'pointer' : 'default',
+                                    transition: 'opacity 0.15s, transform 0.1s',
+                                    boxShadow: style.bg !== 'transparent' ? '0 1px 4px rgba(0,0,0,0.15)' : 'none',
+                                  }}
+                                  onMouseEnter={(e) => hasDetail && (e.currentTarget.style.opacity = '0.85')}
+                                  onMouseLeave={(e) => hasDetail && (e.currentTarget.style.opacity = '1')}
+                                >
+                                  <span style={{ fontSize: '9px', fontWeight: 800, lineHeight: 1.2, textAlign: 'center' }}>{cls.turma}</span>
+                                  {cls.status === 'Reagendado' && <CalendarClock size={9} style={{ marginTop: '2px' }} />}
+                                  {cls.status === 'Atrasado'   && <AlertTriangle  size={9} style={{ marginTop: '2px' }} />}
+                                  {cls.status === 'Stand-by'   && <Pause          size={9} style={{ marginTop: '2px' }} />}
+                                  {cls.status === 'Cancelado'  && <XCircle        size={9} style={{ marginTop: '2px' }} />}
                                 </div>
                               );
                             })}
@@ -650,58 +646,38 @@ const App = () => {
           </div>
         </div>
 
-        {/* ── FOOTER ── */}
-        <footer className="mt-8 flex flex-col items-center gap-6">
-          <div className="flex items-center gap-4">
-            <div className="h-[1px] w-16 bg-gray-300"></div>
-            <div className="flex gap-2">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.magenta }}></div>
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.orange }}></div>
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.purple }}></div>
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.blue }}></div>
+        {/* FOOTER */}
+        <footer style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ height: '1px', width: '48px', backgroundColor: C.gray200 }} />
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: C.purple }} />
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: C.green }} />
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: C.orange }} />
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: C.standby }} />
             </div>
-            <div className="h-[1px] w-16 bg-gray-300"></div>
+            <div style={{ height: '1px', width: '48px', backgroundColor: C.gray200 }} />
           </div>
         </footer>
       </div>
 
-      <style>
-        {`
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-          body { font-family: 'Inter', sans-serif; }
-          .dashboard-header {
-            background-color: #ffffff;
-            border-radius: 0 0 14px 14px;
-            padding: 16px 24px 14px;
-            border-bottom: 3px solid #e91e63;
-          }
-          .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-          .dashboard-title {
-            font-size: 24px;
-            font-weight: 800;
-            margin: 0;
-            letter-spacing: -0.3px;
-            line-height: 1;
-          }
-          .dashboard-subtitle {
-            font-size: 11px;
-            margin-top: 4px;
-            opacity: 0.7;
-            letter-spacing: 0.04em;
-            font-weight: 700;
-          }
-          @media print {
-            .no-print { display: none !important; }
-            header { position: static !important; border-bottom: 3px solid #e91e63 !important; }
-            table { border: 1px solid #ddd !important; }
-            thead tr { background-color: #1e293b !important; -webkit-print-color-adjust: exact; }
-          }
-        `}
-      </style>
+      {/* DETAIL PANEL */}
+      <DetailPanel detail={activeDetail} onClose={() => setActiveDetail(null)} />
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; margin: 0; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        @media print {
+          header { position: static !important; }
+          table { border: 1px solid #ddd !important; }
+          thead tr { background-color: #0f1e35 !important; -webkit-print-color-adjust: exact; }
+        }
+      `}</style>
     </div>
   );
 };
