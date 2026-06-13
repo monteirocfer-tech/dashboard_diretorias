@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 // Exportação CSV pública do Google Sheets — a planilha deve estar compartilhada como "qualquer pessoa com o link pode ver"
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/1EAxSRoWOyuCdMA6WsWnkrTbBHQNRkze1/export?format=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ02z09UnaNQAQQ0sFhJMJeWI9TMk6mof1Q6lnrOqH8zGwqTUi0AWoop8K1vjFO5Z9J_RlivdfmaHBV/pub?output=csv';
 
 const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const FUTURE_MONTHS = ['JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
