@@ -323,39 +323,34 @@ const App = () => {
         const response = await fetch(CSV_URL, { cache: 'no-store' });
         const text = await response.text();
         Papa.parse(text.replace(/^﻿/, ''), {
-          header: true, skipEmptyLines: 'greedy',
+          header: true, skipEmptyLines: 'greedy', delimiter: '',
           complete: (result) => {
-            // Estrutura da planilha: uma linha por treinamento, turmas em colunas
-            // horizontais: "MES T1", "DATA T1", "STATUS T1", "CONVIDADOS T1"...
             const data = [];
             (result.data || []).forEach((r) => {
-              const diretoria  = (r.Diretoria  || '').trim();
-              const nome       = (r.Nome       || '').trim();
-              const fornecedor = (r.Fornecedor || '').trim();
-              const tipo       = (r.Tipo       || '').trim();
-              const horas      = parseNumber(r.Horas);
+              const nome = (r.Nome || '').trim();
               if (!nome) return;
-              for (let t = 1; t <= 20; t++) {
-                const label = `T${t}`;
-                const mes = (r[`MES ${label}`] || '').trim().toUpperCase();
-                if (!mes) continue;
-                const statusRaw = (r[`STATUS ${label}`] || '').trim();
-                const status    = normalizeStatus(statusRaw);
-                if (!status) continue;
-                const npsRaw = r[`NPS ${label}`];
-                data.push({
-                  diretoria, nome, fornecedor, tipo, horas,
-                  turma:        label,
-                  mes,
-                  data_:        (r[`DATA ${label}`]        || '').trim(),
-                  statusRaw,
-                  status,
-                  convidados:   parseNumber(r[`CONVIDADOS ${label}`]),
-                  presentes:    parseNumber(r[`PRESENTES ${label}`]),
-                  nps:          (npsRaw !== '' && npsRaw !== undefined) ? parseNumber(npsRaw) : null,
-                  justificativa:(r[`JUSTIFICATIVA ${label}`] || '').trim(),
-                });
-              }
+              const mes = (r.Mes || '').trim().toUpperCase();
+              if (!mes) return;
+              const statusRaw = (r.Status || '').trim();
+              const status = normalizeStatus(statusRaw);
+              if (!status) return;
+              const npsRaw = r.NPS;
+              data.push({
+                diretoria:    (r.Diretoria  || '').trim(),
+                nome,
+                fornecedor:   (r.Fornecedor || '').trim(),
+                tipo:         (r.Tipo       || '').trim(),
+                horas:        parseNumber(r.Horas),
+                turma:        (r.Turma      || '').trim(),
+                mes,
+                data_:        (r.Data       || '').trim(),
+                statusRaw,
+                status,
+                convidados:   parseNumber(r.Convidados),
+                presentes:    parseNumber(r.Presentes),
+                nps:          (npsRaw !== '' && npsRaw !== undefined) ? parseNumber(npsRaw) : null,
+                justificativa:(r.Justificativa || '').trim(),
+              });
             });
             setRows(data);
             setLoading(false);
