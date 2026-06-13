@@ -20,16 +20,22 @@ const CSV_URL = './base_diretorias.csv';
 const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const FUTURE_MONTHS = ['JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
-// ── PALETA CORPORATIVA ──────────────────────────────────────────
+// ── PALETA CORPORATIVA — IDENTIDADE INTERCEMENT ─────────────────
 const C = {
-  purple:       '#7A3EF0',
-  purpleLight:  '#9B6BDB',
-  purpleDark:   '#5B2CB8',
-  purpleBg:     '#f5f0ff',
-  green:        '#2E7D32',
-  greenBg:      '#f0f7f0',
-  orange:       '#E65100',
-  orangeBg:     '#fff4ee',
+  // InterCement — 5 cores principais
+  purple:       '#662479',  // Roxo   — cor principal da marca
+  purpleLight:  '#8B3EA0',  // Roxo claro (derivado)
+  purpleDark:   '#4A1957',  // Roxo escuro (derivado)
+  purpleBg:     '#f6eefa',  // Roxo fundo suave
+  green:        '#488B4C',  // Verde  — Realizado
+  greenBg:      '#edf4ee',  // Verde fundo suave
+  orange:       '#F07E21',  // Laranja — Atrasado
+  orangeBg:     '#fff4e8',  // Laranja fundo suave
+  magenta:      '#DD1E73',  // Magenta — Reagendado
+  magentaBg:    '#fdeef5',  // Magenta fundo suave
+  red:          '#B02420',  // Vermelho — Cancelado
+  redBg:        '#fdf0ef',  // Vermelho fundo suave
+  // Neutros
   gray800:      '#374151',
   gray600:      '#6B7280',
   gray400:      '#9CA3AF',
@@ -39,8 +45,6 @@ const C = {
   navy:         '#0f1e35',
   navyMid:      '#1e2d4a',
   standby:      '#94a3b8',
-  canceled:     '#546E7A',
-  rose:         '#e91e63',
   white:        '#ffffff',
   bg:           '#f1f5f9',
 };
@@ -65,23 +69,23 @@ const statusMatchesFilter = (status, selected) => {
 };
 
 const STATUS_META = {
-  'Realizado':    { dot: C.green,       bg: C.green,       label: 'Realizado' },
-  'Em andamento': { dot: C.purple,      bg: C.purple,      label: 'Em andamento' },
-  'Planejado':    { dot: C.gray200,     bg: 'transparent', label: 'Planejado', dashed: true },
-  'Cancelado':    { dot: C.canceled,    bg: C.canceled,    label: 'Cancelado' },
-  'Reagendado':   { dot: C.purpleLight, bg: C.purpleLight, label: 'Reagendado' },
-  'Atrasado':     { dot: C.orange,      bg: C.orange,      label: 'Atrasado' },
-  'Stand-by':     { dot: C.standby,     bg: C.standby,     label: 'Stand-by' },
+  'Realizado':    { dot: C.green,    bg: C.green,    label: 'Realizado' },
+  'Em andamento': { dot: C.purple,   bg: C.purple,   label: 'Em andamento' },
+  'Planejado':    { dot: C.gray200,  bg: 'transparent', label: 'Planejado', dashed: true },
+  'Cancelado':    { dot: C.red,      bg: C.red,      label: 'Cancelado' },
+  'Reagendado':   { dot: C.magenta,  bg: C.magenta,  label: 'Reagendado' },
+  'Atrasado':     { dot: C.orange,   bg: C.orange,   label: 'Atrasado' },
+  'Stand-by':     { dot: C.standby,  bg: C.standby,  label: 'Stand-by' },
 };
 
 const STATUS_CARD_META = {
-  'Realizado':    { color: C.green,       softBg: C.greenBg,  softColor: '#1B5E20' },
-  'Em andamento': { color: C.purple,      softBg: C.purpleBg, softColor: C.purpleDark },
-  'Planejado':    { color: C.gray400,     softBg: C.gray100,  softColor: C.gray800 },
-  'Cancelado':    { color: C.canceled,    softBg: '#eceff1',  softColor: '#37474F' },
-  'Reagendado':   { color: C.purpleLight, softBg: '#f3eeff',  softColor: '#6A1B9A' },
-  'Atrasado':     { color: C.orange,      softBg: C.orangeBg, softColor: '#BF360C' },
-  'Stand-by':     { color: C.standby,     softBg: '#f8fafc',  softColor: '#475569' },
+  'Realizado':    { color: C.green,   softBg: C.greenBg,   softColor: '#1B5E20' },
+  'Em andamento': { color: C.purple,  softBg: C.purpleBg,  softColor: C.purpleDark },
+  'Planejado':    { color: C.gray400, softBg: C.gray100,   softColor: C.gray800 },
+  'Cancelado':    { color: C.red,     softBg: C.redBg,     softColor: '#7A1A17' },
+  'Reagendado':   { color: C.magenta, softBg: C.magentaBg, softColor: '#A01555' },
+  'Atrasado':     { color: C.orange,  softBg: C.orangeBg,  softColor: '#B05A10' },
+  'Stand-by':     { color: C.standby, softBg: '#f8fafc',   softColor: '#475569' },
 };
 
 const getStatusStyle = (statusNorm) => {
@@ -105,7 +109,7 @@ const DashboardHeader = () => (
     borderRadius: '0 0 16px 16px',
     padding: '18px 28px 16px',
     borderBottom: `3px solid ${C.purple}`,
-    boxShadow: '0 2px 12px rgba(122,62,240,0.08)',
+    boxShadow: '0 2px 12px rgba(102,36,121,0.08)',
   }}>
     <h1 style={{ fontSize: '22px', fontWeight: 900, margin: 0, letterSpacing: '-0.3px', lineHeight: 1, color: C.navy }}>
       CAPACITAÇÕES <span style={{ color: C.purple }}>CORPORATIVAS</span>
@@ -439,9 +443,9 @@ const App = () => {
 
         {/* KPIs — faixa horizontal compacta */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '12px 0 10px' }}>
-          <KpiCard icon={Users}     label="Pessoas Impactadas" value={pessoasImpactadas}              sub="participantes únicos"    accentColor={C.orange} />
-          <KpiCard icon={Clock}     label="Horas de Formação"  value={Math.round(horasFormacao)}      sub="carga horária total"     accentColor={C.purple} />
-          <KpiCard icon={Hourglass} label="Hora / Pessoa"      value={`${horaPorPessoa.toFixed(1)}h`} sub="média por participante"  accentColor="#0288D1" />
+          <KpiCard icon={Users}     label="Pessoas Impactadas" value={pessoasImpactadas}              sub="participantes únicos"    accentColor={C.purple} />
+          <KpiCard icon={Clock}     label="Horas de Formação"  value={Math.round(horasFormacao)}      sub="carga horária total"     accentColor={C.orange} />
+          <KpiCard icon={Hourglass} label="Hora / Pessoa"      value={`${horaPorPessoa.toFixed(1)}h`} sub="média por participante"  accentColor={C.magenta} />
         </div>
 
         {/* STATUS GERAL */}
@@ -451,7 +455,7 @@ const App = () => {
           return (
             <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: '10px' }}>
               {/* Header */}
-              <div style={{ padding: '9px 18px', background: '#f5f0ff', borderBottom: `1px solid #ede8fd`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ padding: '9px 18px', background: C.purpleBg, borderBottom: `1px solid #e8d5f5`, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: C.purple, flexShrink: 0 }} />
                 <p style={{ fontSize: '9.5px', color: C.purple, textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.18em', lineHeight: 1 }}>Status Geral do Programa</p>
               </div>
@@ -708,7 +712,8 @@ const App = () => {
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: C.purple }} />
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: C.green }} />
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: C.orange }} />
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: C.standby }} />
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: C.magenta }} />
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: C.red }} />
             </div>
             <div style={{ height: '1px', width: '48px', backgroundColor: C.gray200 }} />
           </div>
