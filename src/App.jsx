@@ -332,34 +332,36 @@ const App = () => {
             if (result.data?.[0]) console.log('[DEBUG] Colunas:', JSON.stringify(Object.keys(result.data[0])));
             if (result.data?.[0]) console.log('[DEBUG] Primeira linha:', JSON.stringify(result.data[0]));
             // Estrutura da planilha: uma linha por treinamento, turmas em colunas
-            // horizontais: "MES T1", "DATA T1", "STATUS T1", "CONVIDADOS T1"...
+            // horizontais: "Mes T1", "Data T1", "Status T1", "Convidados T1"...
             const data = [];
             (result.data || []).forEach((r) => {
+              // Suporte aos dois formatos de nome de coluna (original e Google Sheets)
               const diretoria  = (r.Diretoria  || '').trim();
-              const nome       = (r.Nome       || '').trim();
-              const fornecedor = (r.Fornecedor || '').trim();
-              const tipo       = (r.Tipo       || '').trim();
+              const nome       = (r.Treinamento || r.Nome || '').trim();
+              const fornecedor = (r['Nome Fornecedor/ Facilitador'] || r['Nome Fornecedor/Facilitador'] || r.Fornecedor || '').trim();
+              const tipo       = (r.Tipo || '').trim();
               const horas      = parseNumber(r.Horas);
               if (!nome) return;
               for (let t = 1; t <= 20; t++) {
                 const label = `T${t}`;
-                const mes = (r[`MES ${label}`] || '').trim().toUpperCase();
+                // Tenta os dois formatos: "Mes T1" (Sheets) e "MES T1" (CSV original)
+                const mes = (r[`Mes ${label}`] || r[`MES ${label}`] || '').trim().toUpperCase();
                 if (!mes) continue;
-                const statusRaw = (r[`STATUS ${label}`] || '').trim();
+                const statusRaw = (r[`Status ${label}`] || r[`STATUS ${label}`] || '').trim();
                 const status    = normalizeStatus(statusRaw);
                 if (!status) continue;
-                const npsRaw = r[`NPS ${label}`];
+                const npsRaw = r[`NPS ${label}`] ?? r[`Nps ${label}`];
                 data.push({
                   diretoria, nome, fornecedor, tipo, horas,
                   turma:        label,
                   mes,
-                  data_:        (r[`DATA ${label}`]        || '').trim(),
+                  data_:        (r[`Data ${label}`] || r[`DATA ${label}`] || '').trim(),
                   statusRaw,
                   status,
-                  convidados:   parseNumber(r[`CONVIDADOS ${label}`]),
-                  presentes:    parseNumber(r[`PRESENTES ${label}`]),
+                  convidados:   parseNumber(r[`Convidados ${label}`] ?? r[`CONVIDADOS ${label}`]),
+                  presentes:    parseNumber(r[`Presentes ${label}`]  ?? r[`PRESENTES ${label}`]),
                   nps:          (npsRaw !== '' && npsRaw !== undefined) ? parseNumber(npsRaw) : null,
-                  justificativa:(r[`JUSTIFICATIVA ${label}`] || '').trim(),
+                  justificativa:(r[`Justificativa ${label}`] || r[`JUSTIFICATIVA ${label}`] || '').trim(),
                 });
               }
             });
