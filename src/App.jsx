@@ -412,7 +412,7 @@ const App = () => {
     const grouped = new Map();
     filteredRows.forEach((r) => {
       const key = `${r.diretoria}|||${r.nome}`;
-      if (!grouped.has(key)) grouped.set(key, { diretoria: r.diretoria, nome: r.nome, byMonth: {} });
+      if (!grouped.has(key)) grouped.set(key, { diretoria: r.diretoria, nome: r.nome, fornecedor: r.fornecedor, tipo: r.tipo, byMonth: {} });
       const entry = grouped.get(key);
       if (r.mes) {
         if (!entry.byMonth[r.mes]) entry.byMonth[r.mes] = [];
@@ -633,11 +633,37 @@ const App = () => {
 
         {/* CALENDÁRIO OPERACIONAL */}
         <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
+          {/* Barra de scroll no topo — espelha o scroll da tabela */}
+          <div
+            id="top-scroll"
+            style={{ overflowX: 'auto', overflowY: 'hidden', height: '12px' }}
+            onScroll={(e) => {
+              const bottom = document.getElementById('table-scroll');
+              if (bottom) bottom.scrollLeft = e.currentTarget.scrollLeft;
+            }}
+          >
+            <div id="top-scroll-inner" style={{ height: '1px' }} />
+          </div>
+          <div
+            id="table-scroll"
+            style={{ overflowX: 'auto' }}
+            onScroll={(e) => {
+              const top = document.getElementById('top-scroll');
+              if (top) top.scrollLeft = e.currentTarget.scrollLeft;
+              const inner = document.getElementById('top-scroll-inner');
+              if (inner) inner.style.width = e.currentTarget.scrollWidth + 'px';
+            }}
+            ref={(el) => {
+              if (el) {
+                const inner = document.getElementById('top-scroll-inner');
+                if (inner) inner.style.width = el.scrollWidth + 'px';
+              }
+            }}
+          >
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: C.navy, color: C.white }}>
-                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', width: '80px', textAlign: 'center' }}>Unid.</th>
+                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', width: '80px', textAlign: 'center' }}>Diretoria</th>
                   <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', minWidth: '220px', textAlign: 'left' }}>Capacitação Técnica</th>
                   {MONTHS.map((m) => (
                     <th key={m} style={{ padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center', width: '78px', minWidth: '78px' }}>{m}</th>
@@ -655,6 +681,17 @@ const App = () => {
                     </td>
                     <td style={{ padding: '10px 12px', borderRight: `1px solid ${C.gray100}` }}>
                       <span style={{ fontSize: '13px', fontWeight: 700, color: C.navy }}>{training.nome}</span>
+                      {training.fornecedor && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}>
+                          <span style={{ fontSize: '9.5px', fontWeight: 600, color: C.gray400 }}>{training.fornecedor}</span>
+                          {training.tipo && (
+                            <>
+                              <span style={{ width: '3px', height: '3px', borderRadius: '50%', backgroundColor: training.tipo.toLowerCase() === 'externo' ? C.orange : C.purple, flexShrink: 0 }} />
+                              <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: training.tipo.toLowerCase() === 'externo' ? C.orange : C.purple }}>{training.tipo}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </td>
                     {MONTHS.map((m) => {
                       const cellItems = training.byMonth[m] || [];
