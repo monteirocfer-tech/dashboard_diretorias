@@ -354,10 +354,7 @@ const App = () => {
           const colTipo       = col('Tipo');
           const colHoras      = col('Horas');
 
-          console.log('[DEBUG] colunas detectadas:', { colNome, colDiretoria, colFornecedor, colTipo, colHoras });
-          console.log('[DEBUG] total linhas brutas:', result.data?.length);
-
-          (result.data || []).forEach((r) => {
+(result.data || []).forEach((r) => {
             const nome       = (r[colNome]       || '').trim();
             const diretoria  = (r[colDiretoria]  || '').trim();
             const fornecedor = (r[colFornecedor] || '').trim();
@@ -400,8 +397,7 @@ const App = () => {
           });
         });
 
-        console.log('[DEBUG] Total turmas consolidadas:', data.length);
-        setRows(data);
+setRows(data);
         setLoading(false);
       } catch (error) {
         console.error('Erro ao carregar base:', error);
