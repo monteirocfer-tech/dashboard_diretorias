@@ -116,22 +116,28 @@ const DashboardHeader = () => (
   </header>
 );
 
-const KpiCard = ({ icon: Icon, label, value, accentColor }) => (
+const KpiCard = ({ icon: Icon, label, value, sub, accentColor }) => (
   <div style={{
     background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`,
-    borderRadius: '16px',
-    padding: '20px 22px',
-    borderBottom: `3px solid ${accentColor}`,
+    borderRadius: '14px',
+    padding: '14px 20px',
+    borderBottom: `4px solid ${accentColor}`,
     position: 'relative',
     overflow: 'hidden',
     boxShadow: '0 4px 16px rgba(15,30,53,0.18)',
     flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
   }}>
-    <div style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.07 }}>
-      <Icon size={60} color="white" />
+    <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.06 }}>
+      <Icon size={52} color="white" />
     </div>
-    <p style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#94a3b8', marginBottom: '8px', lineHeight: 1 }}>{label}</p>
-    <p style={{ fontSize: '30px', fontWeight: 900, color: C.white, lineHeight: 1, letterSpacing: '-0.5px' }}>{value}</p>
+    <div>
+      <p style={{ fontSize: '8.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#94a3b8', marginBottom: '4px', lineHeight: 1 }}>{label}</p>
+      <p style={{ fontSize: '22px', fontWeight: 900, color: C.white, lineHeight: 1, letterSpacing: '-0.5px' }}>{value}</p>
+      {sub && <p style={{ fontSize: '9px', color: '#64748b', marginTop: '3px', fontWeight: 500 }}>{sub}</p>}
+    </div>
   </div>
 );
 
@@ -431,60 +437,108 @@ const App = () => {
         {/* HEADER */}
         <DashboardHeader />
 
-        {/* STATUS GERAL + KPIs */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px', margin: '12px 0' }}>
-
-          {/* STATUS GERAL */}
-          <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-            <div style={{ padding: '10px 18px', borderBottom: `1px solid ${C.gray100}`, background: C.gray100 }}>
-              <p style={{ fontSize: '10px', color: C.slate, textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.16em', lineHeight: 1 }}>Status Geral do Programa</p>
-            </div>
-            <div style={{ padding: '14px 18px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                {STATUS_ORDER.map((s) => {
-                  const count = statusCounts[s] || 0;
-                  const pct = Math.round((count / totalCount) * 100);
-                  const meta = STATUS_CARD_META[s];
-                  return (
-                    <div key={s} style={{
-                      borderRadius: '12px', border: `1px solid ${C.gray200}`,
-                      padding: '12px 14px', backgroundColor: C.gray100,
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: meta.color, flexShrink: 0 }} />
-                        <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.slate, lineHeight: 1 }}>{s}</span>
-                      </div>
-                      <p style={{ fontSize: '22px', fontWeight: 900, lineHeight: 1, color: pct === 0 ? C.gray400 : meta.softColor }}>{pct}%</p>
-                      <p style={{ fontSize: '10px', fontWeight: 600, color: C.gray400, marginTop: '3px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{count} ações</p>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Progress bar */}
-              <div style={{ marginTop: '12px', height: '4px', backgroundColor: C.gray200, borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
-                {STATUS_ORDER.map((s) => {
-                  const count = statusCounts[s] || 0;
-                  const pct = (count / totalCount) * 100;
-                  if (pct === 0) return null;
-                  return (
-                    <div key={`bar-${s}`}
-                      style={{ width: `${pct}%`, backgroundColor: STATUS_CARD_META[s].color, height: '100%' }}
-                      title={`${s}: ${count} (${Math.round(pct)}%)`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* KPIs */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <KpiCard icon={Users}    label="Pessoas Impactadas"    value={pessoasImpactadas}              accentColor={C.orange} />
-            <KpiCard icon={Clock}    label="Horas de Formação"     value={Math.round(horasFormacao)}      accentColor={C.purple} />
-            <KpiCard icon={Hourglass} label="Hora / Pessoa"        value={`${horaPorPessoa.toFixed(1)}h`} accentColor="#0288D1" />
-          </div>
+        {/* KPIs — faixa horizontal compacta */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '12px 0 10px' }}>
+          <KpiCard icon={Users}     label="Pessoas Impactadas" value={pessoasImpactadas}              sub="participantes únicos"    accentColor={C.orange} />
+          <KpiCard icon={Clock}     label="Horas de Formação"  value={Math.round(horasFormacao)}      sub="carga horária total"     accentColor={C.purple} />
+          <KpiCard icon={Hourglass} label="Hora / Pessoa"      value={`${horaPorPessoa.toFixed(1)}h`} sub="média por participante"  accentColor="#0288D1" />
         </div>
+
+        {/* STATUS GERAL */}
+        {(() => {
+          const primary   = ['Realizado', 'Em andamento', 'Stand-by', 'Planejado'];
+          const secondary = ['Reagendado', 'Atrasado', 'Cancelado'];
+          return (
+            <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: '10px' }}>
+              {/* Header */}
+              <div style={{ padding: '9px 18px', background: '#f5f0ff', borderBottom: `1px solid #ede8fd`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: C.purple, flexShrink: 0 }} />
+                <p style={{ fontSize: '9.5px', color: C.purple, textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.18em', lineHeight: 1 }}>Status Geral do Programa</p>
+              </div>
+
+              <div style={{ padding: '14px 18px 16px' }}>
+                {/* Linha 1 — 4 status principais: cards maiores com fundo colorido */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
+                  {primary.map((s) => {
+                    const count = statusCounts[s] || 0;
+                    const pct   = Math.round((count / totalCount) * 100);
+                    const meta  = STATUS_CARD_META[s];
+                    return (
+                      <div key={s} style={{
+                        borderRadius: '12px',
+                        border: `1.5px solid ${pct === 0 ? C.gray200 : meta.softBg === C.gray100 ? C.gray200 : meta.softBg}`,
+                        padding: '12px 14px',
+                        backgroundColor: pct === 0 ? '#fafafa' : meta.softBg,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: pct === 0 ? C.gray400 : meta.color, flexShrink: 0 }} />
+                          <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: pct === 0 ? C.gray400 : C.slate, lineHeight: 1 }}>{s}</span>
+                        </div>
+                        <p style={{ fontSize: '22px', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.3px', color: pct === 0 ? C.gray400 : meta.softColor }}>{pct}%</p>
+                        <p style={{ fontSize: '10px', fontWeight: 600, color: pct === 0 ? C.gray200 : C.gray400, marginTop: '4px' }}>{count} {count === 1 ? 'ação' : 'ações'}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Linha 2 — 3 status secundários: menores, discretos */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
+                  {secondary.map((s) => {
+                    const count = statusCounts[s] || 0;
+                    const pct   = Math.round((count / totalCount) * 100);
+                    const meta  = STATUS_CARD_META[s];
+                    const active = pct > 0;
+                    return (
+                      <div key={s} style={{
+                        borderRadius: '10px',
+                        border: `1px solid ${active ? meta.softBg : C.gray200}`,
+                        padding: '10px 14px',
+                        backgroundColor: active ? meta.softBg : '#fafafa',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                      }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: active ? meta.color : C.gray400, flexShrink: 0, opacity: active ? 1 : 0.4 }} />
+                        <div>
+                          <p style={{ fontSize: '8.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: active ? C.slate : C.gray400, lineHeight: 1, marginBottom: '3px' }}>{s}</p>
+                          <p style={{ fontSize: '18px', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.3px', color: active ? meta.softColor : C.gray400 }}>{pct}%
+                            <span style={{ fontSize: '10px', fontWeight: 600, color: active ? C.gray400 : C.gray200, marginLeft: '5px' }}>· {count} {count === 1 ? 'ação' : 'ações'}</span>
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Régua grossa */}
+                <div style={{ height: '10px', backgroundColor: C.gray100, borderRadius: '6px', overflow: 'hidden', display: 'flex' }}>
+                  {STATUS_ORDER.map((s) => {
+                    const count = statusCounts[s] || 0;
+                    const pct   = (count / totalCount) * 100;
+                    if (pct === 0) return null;
+                    return (
+                      <div key={`bar-${s}`}
+                        style={{ width: `${pct}%`, backgroundColor: STATUS_CARD_META[s].color, height: '100%', transition: 'width 0.5s ease' }}
+                        title={`${s}: ${count} (${Math.round(pct)}%)`}
+                      />
+                    );
+                  })}
+                </div>
+                {/* Legenda inline da régua */}
+                <div style={{ display: 'flex', gap: '16px', marginTop: '7px', flexWrap: 'wrap' }}>
+                  {STATUS_ORDER.filter(s => (statusCounts[s] || 0) > 0).map((s) => {
+                    const count = statusCounts[s] || 0;
+                    const pct   = Math.round((count / totalCount) * 100);
+                    return (
+                      <div key={`leg-${s}`} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: STATUS_CARD_META[s].color, flexShrink: 0 }} />
+                        <span style={{ fontSize: '9px', fontWeight: 600, color: C.gray400 }}>{s} {pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* FILTROS */}
         <div style={{
