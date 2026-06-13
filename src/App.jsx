@@ -308,6 +308,7 @@ const DetailPanel = ({ detail, onClose }) => {
 const App = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [filterDiretorias, setFilterDiretorias] = useState([]);
   const [filterFornecedores, setFilterFornecedores] = useState([]);
   const [fornecedorSearch, setFornecedorSearch] = useState('');
@@ -321,6 +322,9 @@ const App = () => {
     const fetchData = async () => {
       try {
         const response = await fetch(CSV_URL, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} — ${response.statusText}`);
+        }
         const text = await response.text();
         Papa.parse(text.replace(/^﻿/, ''), {
           header: true, skipEmptyLines: 'greedy',
@@ -365,6 +369,7 @@ const App = () => {
         });
       } catch (error) {
         console.error('Erro ao carregar base:', error);
+        setFetchError(error.message || 'Erro desconhecido');
         setLoading(false);
       }
     };
@@ -445,6 +450,18 @@ const App = () => {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
         <RefreshCw size={40} style={{ color: C.purple, animation: 'spin 1s linear infinite' }} />
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg }}>
+        <div style={{ background: C.white, borderRadius: '16px', padding: '32px 40px', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', maxWidth: '500px', textAlign: 'center' }}>
+          <p style={{ fontSize: '14px', fontWeight: 800, color: C.red, marginBottom: '8px' }}>Erro ao carregar a planilha</p>
+          <p style={{ fontSize: '12px', color: C.gray600, marginBottom: '16px' }}>{fetchError}</p>
+          <p style={{ fontSize: '11px', color: C.gray400 }}>Verifique se a planilha está compartilhada como <strong>"Qualquer pessoa com o link pode ver"</strong> e se o link está correto.</p>
+        </div>
       </div>
     );
   }
