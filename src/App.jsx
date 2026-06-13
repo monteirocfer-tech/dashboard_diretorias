@@ -723,6 +723,7 @@ const App = () => {
                                   onMouseLeave={(e) => hasDetail && (e.currentTarget.style.opacity = '1')}
                                 >
                                   <span style={{ fontSize: '9px', fontWeight: 800, lineHeight: 1.2, textAlign: 'center' }}>{cls.turma}</span>
+                                  {cls.data_ && <span style={{ fontSize: '8px', fontWeight: 600, lineHeight: 1.2, textAlign: 'center', opacity: 0.85 }}>{cls.data_}</span>}
                                   {cls.status === 'Reagendado' && <CalendarClock size={9} style={{ marginTop: '2px' }} />}
                                   {cls.status === 'Atrasado'   && <AlertTriangle  size={9} style={{ marginTop: '2px' }} />}
                                   {cls.status === 'Stand-by'   && <Pause          size={9} style={{ marginTop: '2px' }} />}
