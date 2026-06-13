@@ -339,7 +339,15 @@ const App = () => {
           SHEET_GIDS.map((gid) =>
             fetch(`${SHEETS_BASE}&gid=${gid}`, { cache: 'no-store' })
               .then((r) => r.text())
-              .then(parseSheet)
+              .then((text) => {
+                console.log(`[DEBUG gid=${gid}] primeiros 300 chars:`, text.slice(0, 300));
+                return parseSheet(text);
+              })
+              .then((result) => {
+                console.log(`[DEBUG gid=${result._gid}] colunas:`, result.meta?.fields);
+                console.log(`[DEBUG] linhas:`, result.data?.length, '| primeira:', result.data?.[0]);
+                return result;
+              })
           )
         );
 
