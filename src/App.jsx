@@ -328,7 +328,7 @@ const App = () => {
   useEffect(() => {
     const parseSheet = (text) => new Promise((resolve) => {
       Papa.parse(text.replace(/^﻿/, ''), {
-        header: true, skipEmptyLines: 'greedy',
+        header: true, skipEmptyLines: true,
         complete: resolve,
       });
     });
@@ -339,46 +339,62 @@ const App = () => {
           SHEET_GIDS.map((gid) =>
             fetch(`${SHEETS_BASE}&gid=${gid}`, { cache: 'no-store' })
               .then((r) => r.text())
-              .then((text) => {
-                console.log(`[DEBUG gid=${gid}] primeiros 300 chars:`, text.slice(0, 300));
-                return parseSheet(text);
-              })
-              .then((result) => {
-                console.log(`[DEBUG gid=${result._gid}] colunas:`, result.meta?.fields);
-                console.log(`[DEBUG] linhas:`, result.data?.length, '| primeira:', result.data?.[0]);
-                return result;
-              })
+              .then(parseSheet)
           )
         );
 
         const data = [];
         results.forEach((result) => {
+          const fields = result.meta?.fields || [];
+          // detecta os nomes reais das colunas fixas (case-insensitive)
+          const col = (prefix) => fields.find((f) => f.trim().toLowerCase().startsWith(prefix.toLowerCase())) || prefix;
+          const colNome       = col('Nome do Treinamento');
+          const colDiretoria  = col('Diretoria');
+          const colFornecedor = col('Nome Fornecedor');
+          const colTipo       = col('Tipo');
+          const colHoras      = col('Horas');
+
+          console.log('[DEBUG] colunas detectadas:', { colNome, colDiretoria, colFornecedor, colTipo, colHoras });
+          console.log('[DEBUG] total linhas brutas:', result.data?.length);
+
           (result.data || []).forEach((r) => {
-            const diretoria  = (r.Diretoria  || '').trim();
-            const nome       = (r.Nome       || '').trim();
-            const fornecedor = (r.Fornecedor || '').trim();
-            const tipo       = (r.Tipo       || '').trim();
-            const horas      = parseNumber(r.Horas);
+            const nome       = (r[colNome]       || '').trim();
+            const diretoria  = (r[colDiretoria]  || '').trim();
+            const fornecedor = (r[colFornecedor] || '').trim();
+            const tipo       = (r[colTipo]       || '').trim();
+            const horas      = parseNumber(r[colHoras]);
             if (!nome) return;
+
             for (let t = 1; t <= 20; t++) {
               const label = `T${t}`;
-              const mes = (r[`MES ${label}`] || '').trim().toUpperCase();
+              // encontra coluna de mês para esta turma (ex: "Mes T1" ou "MES T1")
+              const colMes    = fields.find((f) => f.trim().toLowerCase() === `mes ${label}`.toLowerCase());
+              const colStatus = fields.find((f) => f.trim().toLowerCase() === `status ${label}`.toLowerCase());
+              if (!colMes || !colStatus) continue;
+              const mes = (r[colMes] || '').trim().toUpperCase();
               if (!mes) continue;
-              const statusRaw = (r[`STATUS ${label}`] || '').trim();
+              const statusRaw = (r[colStatus] || '').trim();
               const status    = normalizeStatus(statusRaw);
               if (!status) continue;
-              const npsRaw = r[`NPS ${label}`];
+
+              const colData   = fields.find((f) => f.trim().toLowerCase() === `data ${label}`.toLowerCase());
+              const colConv   = fields.find((f) => f.trim().toLowerCase() === `convidados ${label}`.toLowerCase());
+              const colPres   = fields.find((f) => f.trim().toLowerCase() === `presentes ${label}`.toLowerCase());
+              const colNps    = fields.find((f) => f.trim().toLowerCase() === `nps ${label}`.toLowerCase());
+              const colJust   = fields.find((f) => f.trim().toLowerCase() === `justificativa ${label}`.toLowerCase());
+              const npsRaw    = colNps ? r[colNps] : undefined;
+
               data.push({
                 diretoria, nome, fornecedor, tipo, horas,
                 turma:        label,
                 mes,
-                data_:        (r[`DATA ${label}`]        || '').trim(),
+                data_:        colData ? (r[colData] || '').trim() : '',
                 statusRaw,
                 status,
-                convidados:   parseNumber(r[`CONVIDADOS ${label}`]),
-                presentes:    parseNumber(r[`PRESENTES ${label}`]),
+                convidados:   colConv ? parseNumber(r[colConv]) : 0,
+                presentes:    colPres ? parseNumber(r[colPres]) : 0,
                 nps:          (npsRaw !== '' && npsRaw !== undefined) ? parseNumber(npsRaw) : null,
-                justificativa:(r[`JUSTIFICATIVA ${label}`] || '').trim(),
+                justificativa: colJust ? (r[colJust] || '').trim() : '',
               });
             }
           });
