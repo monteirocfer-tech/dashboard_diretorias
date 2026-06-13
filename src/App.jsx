@@ -325,6 +325,9 @@ const App = () => {
         Papa.parse(text.replace(/^﻿/, ''), {
           header: true, skipEmptyLines: 'greedy',
           complete: (result) => {
+            console.log('[DEBUG] Total linhas:', result.data?.length);
+            console.log('[DEBUG] Colunas:', result.meta?.fields);
+            console.log('[DEBUG] Primeira linha:', result.data?.[0]);
             // Estrutura da planilha: uma linha por treinamento, turmas em colunas
             // horizontais: "MES T1", "DATA T1", "STATUS T1", "CONVIDADOS T1"...
             const data = [];
