@@ -15,7 +15,8 @@ import {
   X,
 } from 'lucide-react';
 
-const CSV_URL = './base_diretorias.csv';
+// Exportação CSV pública do Google Sheets — a planilha deve estar compartilhada como "qualquer pessoa com o link pode ver"
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/1EAxSRoWOyuCdMA6WsWnkrTbBHQNRkze1/export?format=csv';
 
 const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const FUTURE_MONTHS = ['JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
@@ -322,26 +323,40 @@ const App = () => {
         const response = await fetch(CSV_URL, { cache: 'no-store' });
         const text = await response.text();
         Papa.parse(text.replace(/^﻿/, ''), {
-          header: true, skipEmptyLines: 'greedy', delimiter: ';',
+          header: true, skipEmptyLines: 'greedy',
           complete: (result) => {
-            const data = (result.data || [])
-              .map((r) => ({
-                diretoria: (r.Diretoria || '').trim(),
-                nome: (r.Nome || '').trim(),
-                fornecedor: (r.Fornecedor || '').trim(),
-                tipo: (r.Tipo || '').trim(),
-                horas: parseNumber(r.Horas),
-                turma: (r.Turma || '').trim(),
-                mes: (r.Mes || '').trim().toUpperCase(),
-                data_: (r.Data || '').trim(),
-                statusRaw: (r.Status || '').trim(),
-                status: normalizeStatus(r.Status),
-                convidados: parseNumber(r.Convidados),
-                presentes: parseNumber(r.Presentes),
-                nps: r.NPS !== '' && r.NPS !== undefined ? parseNumber(r.NPS) : null,
-                justificativa: (r.Justificativa || '').trim(),
-              }))
-              .filter((r) => r.nome && r.status);
+            // Estrutura da planilha: uma linha por treinamento, turmas em colunas
+            // horizontais: "MES T1", "DATA T1", "STATUS T1", "CONVIDADOS T1"...
+            const data = [];
+            (result.data || []).forEach((r) => {
+              const diretoria  = (r.Diretoria  || '').trim();
+              const nome       = (r.Nome       || '').trim();
+              const fornecedor = (r.Fornecedor || '').trim();
+              const tipo       = (r.Tipo       || '').trim();
+              const horas      = parseNumber(r.Horas);
+              if (!nome) return;
+              for (let t = 1; t <= 20; t++) {
+                const label = `T${t}`;
+                const mes = (r[`MES ${label}`] || '').trim().toUpperCase();
+                if (!mes) continue;
+                const statusRaw = (r[`STATUS ${label}`] || '').trim();
+                const status    = normalizeStatus(statusRaw);
+                if (!status) continue;
+                const npsRaw = r[`NPS ${label}`];
+                data.push({
+                  diretoria, nome, fornecedor, tipo, horas,
+                  turma:        label,
+                  mes,
+                  data_:        (r[`DATA ${label}`]        || '').trim(),
+                  statusRaw,
+                  status,
+                  convidados:   parseNumber(r[`CONVIDADOS ${label}`]),
+                  presentes:    parseNumber(r[`PRESENTES ${label}`]),
+                  nps:          (npsRaw !== '' && npsRaw !== undefined) ? parseNumber(npsRaw) : null,
+                  justificativa:(r[`JUSTIFICATIVA ${label}`] || '').trim(),
+                });
+              }
+            });
             setRows(data);
             setLoading(false);
           }
@@ -723,6 +738,7 @@ const App = () => {
                                   onMouseLeave={(e) => hasDetail && (e.currentTarget.style.opacity = '1')}
                                 >
                                   <span style={{ fontSize: '9px', fontWeight: 800, lineHeight: 1.2, textAlign: 'center' }}>{cls.turma}</span>
+                                  {cls.data_ && <span style={{ fontSize: '8px', fontWeight: 600, lineHeight: 1.2, textAlign: 'center', opacity: 0.85 }}>{cls.data_}</span>}
                                   {cls.status === 'Reagendado' && <CalendarClock size={9} style={{ marginTop: '2px' }} />}
                                   {cls.status === 'Atrasado'   && <AlertTriangle  size={9} style={{ marginTop: '2px' }} />}
                                   {cls.status === 'Stand-by'   && <Pause          size={9} style={{ marginTop: '2px' }} />}
