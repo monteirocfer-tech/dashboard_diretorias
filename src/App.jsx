@@ -26,7 +26,7 @@ const SHEET_GIDS = [
   763204812,  // Financeiro e TI
 ];
 
-const MONTHS = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+const MONTHS = ['MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const FUTURE_MONTHS = ['JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
 // ── PALETA CORPORATIVA — IDENTIDADE INTERCEMENT ─────────────────
@@ -120,11 +120,11 @@ const DashboardHeader = () => (
     borderBottom: `3px solid ${C.purple}`,
     boxShadow: '0 2px 12px rgba(102,36,121,0.08)',
   }}>
-    <h1 style={{ fontSize: '22px', fontWeight: 900, margin: 0, letterSpacing: '-0.3px', lineHeight: 1, color: C.navy }}>
+    <h1 style={{ fontSize: '22px', fontWeight: 900, margin: 0, letterSpacing: '-0.3px', lineHeight: 1, color: C.purple }}>
       CAPACITAÇÕES <span style={{ color: C.purple }}>CORPORATIVAS</span>
     </h1>
     <p style={{ fontSize: '11px', marginTop: '5px', color: C.slate, letterSpacing: '0.04em', fontWeight: 600 }}>
-      Acompanhamento das Ações de Capacitações Corporativas da InterCement
+      Acompanhamento das Ações Staff Corporativas
     </p>
   </header>
 );
@@ -472,8 +472,18 @@ setRows(data);
         entry.byMonth[r.mes].push(r);
       }
     });
+    const getFirstMonthIndex = (byMonth) => {
+      let min = Infinity;
+      Object.keys(byMonth).forEach((m) => {
+        const idx = MONTHS.indexOf(m);
+        if (idx !== -1 && idx < min) min = idx;
+      });
+      return min === Infinity ? 999 : min;
+    };
     return [...grouped.values()].sort((a, b) =>
-      a.diretoria.localeCompare(b.diretoria, 'pt-BR') || a.nome.localeCompare(b.nome, 'pt-BR')
+      a.diretoria.localeCompare(b.diretoria, 'pt-BR') ||
+      getFirstMonthIndex(a.byMonth) - getFirstMonthIndex(b.byMonth) ||
+      a.nome.localeCompare(b.nome, 'pt-BR')
     );
   }, [filteredRows]);
 
@@ -496,15 +506,13 @@ setRows(data);
 
         {/* KPIs — faixa horizontal compacta */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '12px 0 10px' }}>
-          <KpiCard icon={Users}     label="Pessoas Impactadas" value={pessoasImpactadas}              sub="participantes únicos"    accentColor={C.purple} />
+          <KpiCard icon={Users}     label="Pessoas Impactadas" value={pessoasImpactadas}              sub="participantes"    accentColor={C.purple} />
           <KpiCard icon={Clock}     label="Horas de Formação"  value={Math.round(horasFormacao)}      sub="carga horária total"     accentColor={C.orange} />
           <KpiCard icon={Hourglass} label="Hora / Pessoa"      value={`${horaPorPessoa.toFixed(1)}h`} sub="média por participante"  accentColor={C.magenta} />
         </div>
 
         {/* STATUS GERAL */}
         {(() => {
-          const primary   = ['Realizado', 'Em andamento', 'Stand-by', 'Planejado'];
-          const secondary = ['Reagendado', 'Atrasado', 'Cancelado'];
           return (
             <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden', marginBottom: '10px' }}>
               {/* Header */}
@@ -514,52 +522,27 @@ setRows(data);
               </div>
 
               <div style={{ padding: '14px 18px 16px' }}>
-                {/* Linha 1 — 4 status principais: cards maiores com fundo colorido */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
-                  {primary.map((s) => {
+                {/* Cards — todos os 7 status em grid uniforme */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', marginBottom: '14px' }}>
+                  {STATUS_ORDER.map((s) => {
                     const count = statusCounts[s] || 0;
                     const pct   = Math.round((count / totalCount) * 100);
                     const meta  = STATUS_CARD_META[s];
-                    return (
-                      <div key={s} style={{
-                        borderRadius: '12px',
-                        border: `1.5px solid ${pct === 0 ? C.gray200 : meta.softBg === C.gray100 ? C.gray200 : meta.softBg}`,
-                        padding: '12px 14px',
-                        backgroundColor: pct === 0 ? '#fafafa' : meta.softBg,
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: pct === 0 ? C.gray400 : meta.color, flexShrink: 0 }} />
-                          <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: pct === 0 ? C.gray400 : C.slate, lineHeight: 1 }}>{s}</span>
-                        </div>
-                        <p style={{ fontSize: '22px', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.3px', color: pct === 0 ? C.gray400 : meta.softColor }}>{pct}%</p>
-                        <p style={{ fontSize: '10px', fontWeight: 600, color: pct === 0 ? C.gray200 : C.gray400, marginTop: '4px' }}>{count} {count === 1 ? 'ação' : 'ações'}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Linha 2 — 3 status secundários: menores, discretos */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '14px' }}>
-                  {secondary.map((s) => {
-                    const count = statusCounts[s] || 0;
-                    const pct   = Math.round((count / totalCount) * 100);
-                    const meta  = STATUS_CARD_META[s];
-                    const active = pct > 0;
+                    const active = count > 0;
                     return (
                       <div key={s} style={{
                         borderRadius: '10px',
-                        border: `1px solid ${active ? meta.softBg : C.gray200}`,
-                        padding: '10px 14px',
+                        border: `1.5px solid ${active ? meta.color : C.gray200}`,
+                        padding: '10px 12px',
                         backgroundColor: active ? meta.softBg : '#fafafa',
-                        display: 'flex', alignItems: 'center', gap: '10px',
+                        display: 'flex', flexDirection: 'column', gap: '6px',
                       }}>
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: active ? meta.color : C.gray400, flexShrink: 0, opacity: active ? 1 : 0.4 }} />
-                        <div>
-                          <p style={{ fontSize: '8.5px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: active ? C.slate : C.gray400, lineHeight: 1, marginBottom: '3px' }}>{s}</p>
-                          <p style={{ fontSize: '18px', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.3px', color: active ? meta.softColor : C.gray400 }}>{pct}%
-                            <span style={{ fontSize: '10px', fontWeight: 600, color: active ? C.gray400 : C.gray200, marginLeft: '5px' }}>· {count} {count === 1 ? 'ação' : 'ações'}</span>
-                          </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: active ? meta.color : C.gray300 || C.gray400, flexShrink: 0 }} />
+                          <span style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.09em', color: active ? C.slate : C.gray400, lineHeight: 1 }}>{s}</span>
                         </div>
+                        <p style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.3px', color: active ? meta.softColor : C.gray400 }}>{pct}%</p>
+                        <p style={{ fontSize: '9px', fontWeight: 600, color: active ? C.gray400 : C.gray200 }}>{count} {count === 1 ? 'ação' : 'ações'}</p>
                       </div>
                     );
                   })}
@@ -689,7 +672,7 @@ setRows(data);
           {/* Barra de scroll no topo — espelha o scroll da tabela */}
           <div
             id="top-scroll"
-            style={{ overflowX: 'auto', overflowY: 'hidden', height: '12px' }}
+            style={{ overflowX: 'auto', overflowY: 'hidden', height: '16px' }}
             onScroll={(e) => {
               const bottom = document.getElementById('table-scroll');
               if (bottom) bottom.scrollLeft = e.currentTarget.scrollLeft;
@@ -819,9 +802,10 @@ setRows(data);
         * { box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; margin: 0; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #e8d5f5; border-radius: 6px; }
+        ::-webkit-scrollbar-thumb { background: #662479; border-radius: 6px; border: 2px solid #e8d5f5; }
+        ::-webkit-scrollbar-thumb:hover { background: #4A1957; }
         @media print {
           header { position: static !important; }
           table { border: 1px solid #ddd !important; }
