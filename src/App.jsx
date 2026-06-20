@@ -680,7 +680,8 @@ setRows(data);
         </div>
 
         {/* CALENDÁRIO OPERACIONAL */}
-        <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+        {/* overflow:clip clippa o conteúdo sem criar scroll container — necessário para position:sticky funcionar no filho */}
+        <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'clip' }}>
 
           {/* Cabeçalho sticky — fora do container com overflow-x para funcionar no scroll vertical */}
           <div style={{ position: 'sticky', top: filterBarHeight, zIndex: 30, backgroundColor: C.white }}>
