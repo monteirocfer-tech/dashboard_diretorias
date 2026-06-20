@@ -679,167 +679,109 @@ setRows(data);
           </div>
         </div>
 
-        {/* CALENDÁRIO OPERACIONAL */}
-
-        {/* ── Cabeçalho sticky ──────────────────────────────────────────────────
-            Precisa ser IRMÃO (não filho) do card body: qualquer overflow no pai
-            (hidden/clip/auto/scroll) impede position:sticky de funcionar.
-            Visualmente parece a parte superior do card (bordas top + laterais,
-            radius apenas nos cantos superiores; o body fecha com radius inferior).
-        ─────────────────────────────────────────────────────────────────────── */}
-        <div style={{
-          position: 'sticky', top: filterBarHeight, zIndex: 30,
-          background: C.white,
-          borderRadius: '16px 16px 0 0',
-          border: `1px solid ${C.gray200}`,
-          borderBottom: 'none',
-          boxShadow: '0 -1px 0 0 rgba(0,0,0,0.04), 0 4px 8px rgba(0,0,0,0.06)',
-        }}>
-          {/* Barra de scroll no topo — espelha o scroll da tabela */}
-          <div
-            id="top-scroll"
-            style={{ overflowX: 'auto', overflowY: 'hidden', height: '16px', borderRadius: '16px 16px 0 0' }}
-            onScroll={(e) => {
-              const bottom = document.getElementById('table-scroll');
-              if (bottom) bottom.scrollLeft = e.currentTarget.scrollLeft;
-              const hdr = document.getElementById('header-scroll');
-              if (hdr) hdr.scrollLeft = e.currentTarget.scrollLeft;
-            }}
-          >
-            <div id="top-scroll-inner" style={{ height: '1px' }} />
-          </div>
-          {/* Linha dos meses */}
-          <div
-            id="header-scroll"
-            style={{ overflowX: 'hidden', overflowY: 'hidden' }}
-          >
-            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-              <colgroup>
-                <col style={{ width: '80px' }} />
-                <col style={{ minWidth: '220px' }} />
-                {MONTHS.map((m) => <col key={m} style={{ width: '78px', minWidth: '78px' }} />)}
-              </colgroup>
-              <thead>
-                <tr style={{ backgroundColor: C.navy, color: C.white }}>
-                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'center' }}>Diretoria</th>
-                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'left' }}>Capacitação Técnica</th>
-                  {MONTHS.map((m) => (
-                    <th key={m} style={{ padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center' }}>{m}</th>
-                  ))}
-                </tr>
-              </thead>
-            </table>
-          </div>
-        </div>
-
-        {/* ── Corpo do calendário ───────────────────────────────────────────────
-            overflow:hidden aqui só para clippar os cantos inferiores arredondados.
-            Não afeta o sticky do cabeçalho acima porque são elementos irmãos.
-        ─────────────────────────────────────────────────────────────────────── */}
+        {/* CALENDÁRIO OPERACIONAL
+            Abordagem definitiva: container único com overflow:auto (cria scroll
+            container real para X e Y) + position:sticky nos <th>.
+            Dentro de um scroll container explícito, position:sticky funciona
+            independente de qualquer CSS ancestor externo.
+        */}
         <div style={{
           background: C.white,
-          borderRadius: '0 0 16px 16px',
+          borderRadius: '16px',
           border: `1px solid ${C.gray200}`,
-          borderTop: 'none',
           boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-          overflow: 'hidden',
+          overflow: 'auto',
+          maxHeight: `calc(100vh - ${filterBarHeight + 60}px)`,
         }}>
-
-          {/* Corpo da tabela — scroll horizontal independente */}
-          <div
-            id="table-scroll"
-            style={{ overflowX: 'auto' }}
-            onScroll={(e) => {
-              const top = document.getElementById('top-scroll');
-              if (top) top.scrollLeft = e.currentTarget.scrollLeft;
-              const inner = document.getElementById('top-scroll-inner');
-              if (inner) inner.style.width = e.currentTarget.scrollWidth + 'px';
-              const hdr = document.getElementById('header-scroll');
-              if (hdr) hdr.scrollLeft = e.currentTarget.scrollLeft;
-            }}
-            ref={(el) => {
-              if (el) {
-                const inner = document.getElementById('top-scroll-inner');
-                if (inner) inner.style.width = el.scrollWidth + 'px';
-              }
-            }}
-          >
-            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-              <colgroup>
-                <col style={{ width: '80px' }} />
-                <col style={{ minWidth: '220px' }} />
-                {MONTHS.map((m) => <col key={m} style={{ width: '78px', minWidth: '78px' }} />)}
-              </colgroup>
-              <tbody>
-                {calendarRows.map((training, idx) => (
-                  <tr key={`${training.diretoria}-${idx}`} style={{ borderBottom: `1px solid ${C.gray100}` }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fafbff'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.white}
-                  >
-                    <td style={{ padding: '10px 8px', borderRight: `1px solid ${C.gray100}`, textAlign: 'center' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 800, color: C.slate, textTransform: 'uppercase' }}>{training.diretoria}</span>
-                    </td>
-                    <td style={{ padding: '10px 12px', borderRight: `1px solid ${C.gray100}` }}>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: C.navy }}>{training.nome}</span>
-                      {training.fornecedor && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}>
-                          <span style={{ fontSize: '9.5px', fontWeight: 600, color: C.gray400 }}>{training.fornecedor}</span>
-                          {training.tipo && (
-                            <>
-                              <span style={{ width: '3px', height: '3px', borderRadius: '50%', backgroundColor: training.tipo.toLowerCase() === 'externo' ? C.orange : C.purple, flexShrink: 0 }} />
-                              <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: training.tipo.toLowerCase() === 'externo' ? C.orange : C.purple }}>{training.tipo}</span>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    {MONTHS.map((m) => {
-                      const cellItems = training.byMonth[m] || [];
-                      return (
-                        <td key={m} style={{ padding: '6px 4px', textAlign: 'center', borderLeft: `1px solid ${C.gray100}`, verticalAlign: 'middle' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minHeight: '40px', justifyContent: 'center' }}>
-                            {cellItems.map((cls, ci) => {
-                              const style = getStatusStyle(cls.status);
-                              const hasDetail = ['Atrasado', 'Reagendado', 'Stand-by'].includes(cls.status);
-                              const detailId = `${idx}-${m}-${ci}`;
-                              return (
-                                <div
-                                  key={detailId}
-                                  onClick={hasDetail ? (e) => {
-                                    e.stopPropagation();
-                                    setActiveDetail(activeDetail?.id === detailId ? null : { id: detailId, training, cls });
-                                  } : undefined}
-                                  style={{
-                                    display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                    minWidth: '62px', maxWidth: '74px', minHeight: '38px',
-                                    padding: '5px 6px', borderRadius: '6px',
-                                    backgroundColor: style.bg, color: style.text,
-                                    border: style.border || 'none',
-                                    cursor: hasDetail ? 'pointer' : 'default',
-                                    transition: 'opacity 0.15s, transform 0.1s',
-                                    boxShadow: style.bg !== 'transparent' ? '0 1px 4px rgba(0,0,0,0.15)' : 'none',
-                                  }}
-                                  onMouseEnter={(e) => hasDetail && (e.currentTarget.style.opacity = '0.85')}
-                                  onMouseLeave={(e) => hasDetail && (e.currentTarget.style.opacity = '1')}
-                                >
-                                  <span style={{ fontSize: '9px', fontWeight: 800, lineHeight: 1.2, textAlign: 'center' }}>{cls.turma}</span>
-                                  {cls.data_ && <span style={{ fontSize: '8px', fontWeight: 600, lineHeight: 1.2, textAlign: 'center', opacity: 0.85 }}>{cls.data_}</span>}
-                                  {cls.status === 'Reagendado' && <CalendarClock size={9} style={{ marginTop: '2px' }} />}
-                                  {cls.status === 'Atrasado'   && <AlertTriangle  size={9} style={{ marginTop: '2px' }} />}
-                                  {cls.status === 'Stand-by'   && <Pause          size={9} style={{ marginTop: '2px' }} />}
-                                  {cls.status === 'Cancelado'  && <XCircle        size={9} style={{ marginTop: '2px' }} />}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
+          <table style={{
+            width: '100%',
+            minWidth: `${80 + 220 + MONTHS.length * 78}px`,
+            borderCollapse: 'collapse',
+            tableLayout: 'fixed',
+          }}>
+            <colgroup>
+              <col style={{ width: '80px' }} />
+              <col style={{ width: '220px' }} />
+              {MONTHS.map((m) => <col key={m} style={{ width: '78px' }} />)}
+            </colgroup>
+            <thead>
+              <tr>
+                <th style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: C.navy, color: C.white, padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'center' }}>Diretoria</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: C.navy, color: C.white, padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'left' }}>Capacitação Técnica</th>
+                {MONTHS.map((m) => (
+                  <th key={m} style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: C.navy, color: C.white, padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center' }}>{m}</th>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </tr>
+            </thead>
+            <tbody>
+              {calendarRows.map((training, idx) => (
+                <tr key={`${training.diretoria}-${idx}`} style={{ borderBottom: `1px solid ${C.gray100}` }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fafbff'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.white}
+                >
+                  <td style={{ padding: '10px 8px', borderRight: `1px solid ${C.gray100}`, textAlign: 'center' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: C.slate, textTransform: 'uppercase' }}>{training.diretoria}</span>
+                  </td>
+                  <td style={{ padding: '10px 12px', borderRight: `1px solid ${C.gray100}` }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: C.navy }}>{training.nome}</span>
+                    {training.fornecedor && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px' }}>
+                        <span style={{ fontSize: '9.5px', fontWeight: 600, color: C.gray400 }}>{training.fornecedor}</span>
+                        {training.tipo && (
+                          <>
+                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', backgroundColor: training.tipo.toLowerCase() === 'externo' ? C.orange : C.purple, flexShrink: 0 }} />
+                            <span style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: training.tipo.toLowerCase() === 'externo' ? C.orange : C.purple }}>{training.tipo}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  {MONTHS.map((m) => {
+                    const cellItems = training.byMonth[m] || [];
+                    return (
+                      <td key={m} style={{ padding: '6px 4px', textAlign: 'center', borderLeft: `1px solid ${C.gray100}`, verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minHeight: '40px', justifyContent: 'center' }}>
+                          {cellItems.map((cls, ci) => {
+                            const style = getStatusStyle(cls.status);
+                            const hasDetail = ['Atrasado', 'Reagendado', 'Stand-by'].includes(cls.status);
+                            const detailId = `${idx}-${m}-${ci}`;
+                            return (
+                              <div
+                                key={detailId}
+                                onClick={hasDetail ? (e) => {
+                                  e.stopPropagation();
+                                  setActiveDetail(activeDetail?.id === detailId ? null : { id: detailId, training, cls });
+                                } : undefined}
+                                style={{
+                                  display: 'inline-flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                  minWidth: '62px', maxWidth: '74px', minHeight: '38px',
+                                  padding: '5px 6px', borderRadius: '6px',
+                                  backgroundColor: style.bg, color: style.text,
+                                  border: style.border || 'none',
+                                  cursor: hasDetail ? 'pointer' : 'default',
+                                  transition: 'opacity 0.15s, transform 0.1s',
+                                  boxShadow: style.bg !== 'transparent' ? '0 1px 4px rgba(0,0,0,0.15)' : 'none',
+                                }}
+                                onMouseEnter={(e) => hasDetail && (e.currentTarget.style.opacity = '0.85')}
+                                onMouseLeave={(e) => hasDetail && (e.currentTarget.style.opacity = '1')}
+                              >
+                                <span style={{ fontSize: '9px', fontWeight: 800, lineHeight: 1.2, textAlign: 'center' }}>{cls.turma}</span>
+                                {cls.data_ && <span style={{ fontSize: '8px', fontWeight: 600, lineHeight: 1.2, textAlign: 'center', opacity: 0.85 }}>{cls.data_}</span>}
+                                {cls.status === 'Reagendado' && <CalendarClock size={9} style={{ marginTop: '2px' }} />}
+                                {cls.status === 'Atrasado'   && <AlertTriangle  size={9} style={{ marginTop: '2px' }} />}
+                                {cls.status === 'Stand-by'   && <Pause          size={9} style={{ marginTop: '2px' }} />}
+                                {cls.status === 'Cancelado'  && <XCircle        size={9} style={{ marginTop: '2px' }} />}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {/* FOOTER */}
