@@ -680,47 +680,70 @@ setRows(data);
         </div>
 
         {/* CALENDÁRIO OPERACIONAL */}
-        {/* overflow:clip clippa o conteúdo sem criar scroll container — necessário para position:sticky funcionar no filho */}
-        <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'clip' }}>
 
-          {/* Cabeçalho sticky — fora do container com overflow-x para funcionar no scroll vertical */}
-          <div style={{ position: 'sticky', top: filterBarHeight, zIndex: 30, backgroundColor: C.white }}>
-            {/* Barra de scroll no topo — espelha o scroll da tabela */}
-            <div
-              id="top-scroll"
-              style={{ overflowX: 'auto', overflowY: 'hidden', height: '16px' }}
-              onScroll={(e) => {
-                const bottom = document.getElementById('table-scroll');
-                if (bottom) bottom.scrollLeft = e.currentTarget.scrollLeft;
-                const hdr = document.getElementById('header-scroll');
-                if (hdr) hdr.scrollLeft = e.currentTarget.scrollLeft;
-              }}
-            >
-              <div id="top-scroll-inner" style={{ height: '1px' }} />
-            </div>
-            {/* Linha dos meses */}
-            <div
-              id="header-scroll"
-              style={{ overflowX: 'hidden', overflowY: 'hidden' }}
-            >
-              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-                <colgroup>
-                  <col style={{ width: '80px' }} />
-                  <col style={{ minWidth: '220px' }} />
-                  {MONTHS.map((m) => <col key={m} style={{ width: '78px', minWidth: '78px' }} />)}
-                </colgroup>
-                <thead>
-                  <tr style={{ backgroundColor: C.navy, color: C.white }}>
-                    <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'center' }}>Diretoria</th>
-                    <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'left' }}>Capacitação Técnica</th>
-                    {MONTHS.map((m) => (
-                      <th key={m} style={{ padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center' }}>{m}</th>
-                    ))}
-                  </tr>
-                </thead>
-              </table>
-            </div>
+        {/* ── Cabeçalho sticky ──────────────────────────────────────────────────
+            Precisa ser IRMÃO (não filho) do card body: qualquer overflow no pai
+            (hidden/clip/auto/scroll) impede position:sticky de funcionar.
+            Visualmente parece a parte superior do card (bordas top + laterais,
+            radius apenas nos cantos superiores; o body fecha com radius inferior).
+        ─────────────────────────────────────────────────────────────────────── */}
+        <div style={{
+          position: 'sticky', top: filterBarHeight, zIndex: 30,
+          background: C.white,
+          borderRadius: '16px 16px 0 0',
+          border: `1px solid ${C.gray200}`,
+          borderBottom: 'none',
+          boxShadow: '0 -1px 0 0 rgba(0,0,0,0.04), 0 4px 8px rgba(0,0,0,0.06)',
+        }}>
+          {/* Barra de scroll no topo — espelha o scroll da tabela */}
+          <div
+            id="top-scroll"
+            style={{ overflowX: 'auto', overflowY: 'hidden', height: '16px', borderRadius: '16px 16px 0 0' }}
+            onScroll={(e) => {
+              const bottom = document.getElementById('table-scroll');
+              if (bottom) bottom.scrollLeft = e.currentTarget.scrollLeft;
+              const hdr = document.getElementById('header-scroll');
+              if (hdr) hdr.scrollLeft = e.currentTarget.scrollLeft;
+            }}
+          >
+            <div id="top-scroll-inner" style={{ height: '1px' }} />
           </div>
+          {/* Linha dos meses */}
+          <div
+            id="header-scroll"
+            style={{ overflowX: 'hidden', overflowY: 'hidden' }}
+          >
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: '80px' }} />
+                <col style={{ minWidth: '220px' }} />
+                {MONTHS.map((m) => <col key={m} style={{ width: '78px', minWidth: '78px' }} />)}
+              </colgroup>
+              <thead>
+                <tr style={{ backgroundColor: C.navy, color: C.white }}>
+                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'center' }}>Diretoria</th>
+                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'left' }}>Capacitação Técnica</th>
+                  {MONTHS.map((m) => (
+                    <th key={m} style={{ padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center' }}>{m}</th>
+                  ))}
+                </tr>
+              </thead>
+            </table>
+          </div>
+        </div>
+
+        {/* ── Corpo do calendário ───────────────────────────────────────────────
+            overflow:hidden aqui só para clippar os cantos inferiores arredondados.
+            Não afeta o sticky do cabeçalho acima porque são elementos irmãos.
+        ─────────────────────────────────────────────────────────────────────── */}
+        <div style={{
+          background: C.white,
+          borderRadius: '0 0 16px 16px',
+          border: `1px solid ${C.gray200}`,
+          borderTop: 'none',
+          boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+          overflow: 'hidden',
+        }}>
 
           {/* Corpo da tabela — scroll horizontal independente */}
           <div
