@@ -681,17 +681,47 @@ setRows(data);
 
         {/* CALENDÁRIO OPERACIONAL */}
         <div style={{ background: C.white, borderRadius: '16px', border: `1px solid ${C.gray200}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-          {/* Barra de scroll no topo — espelha o scroll da tabela */}
-          <div
-            id="top-scroll"
-            style={{ overflowX: 'auto', overflowY: 'hidden', height: '16px' }}
-            onScroll={(e) => {
-              const bottom = document.getElementById('table-scroll');
-              if (bottom) bottom.scrollLeft = e.currentTarget.scrollLeft;
-            }}
-          >
-            <div id="top-scroll-inner" style={{ height: '1px' }} />
+
+          {/* Cabeçalho sticky — fora do container com overflow-x para funcionar no scroll vertical */}
+          <div style={{ position: 'sticky', top: filterBarHeight, zIndex: 30, backgroundColor: C.white }}>
+            {/* Barra de scroll no topo — espelha o scroll da tabela */}
+            <div
+              id="top-scroll"
+              style={{ overflowX: 'auto', overflowY: 'hidden', height: '16px' }}
+              onScroll={(e) => {
+                const bottom = document.getElementById('table-scroll');
+                if (bottom) bottom.scrollLeft = e.currentTarget.scrollLeft;
+                const hdr = document.getElementById('header-scroll');
+                if (hdr) hdr.scrollLeft = e.currentTarget.scrollLeft;
+              }}
+            >
+              <div id="top-scroll-inner" style={{ height: '1px' }} />
+            </div>
+            {/* Linha dos meses */}
+            <div
+              id="header-scroll"
+              style={{ overflowX: 'hidden', overflowY: 'hidden' }}
+            >
+              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                <colgroup>
+                  <col style={{ width: '80px' }} />
+                  <col style={{ minWidth: '220px' }} />
+                  {MONTHS.map((m) => <col key={m} style={{ width: '78px', minWidth: '78px' }} />)}
+                </colgroup>
+                <thead>
+                  <tr style={{ backgroundColor: C.navy, color: C.white }}>
+                    <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'center' }}>Diretoria</th>
+                    <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'left' }}>Capacitação Técnica</th>
+                    {MONTHS.map((m) => (
+                      <th key={m} style={{ padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center' }}>{m}</th>
+                    ))}
+                  </tr>
+                </thead>
+              </table>
+            </div>
           </div>
+
+          {/* Corpo da tabela — scroll horizontal independente */}
           <div
             id="table-scroll"
             style={{ overflowX: 'auto' }}
@@ -700,6 +730,8 @@ setRows(data);
               if (top) top.scrollLeft = e.currentTarget.scrollLeft;
               const inner = document.getElementById('top-scroll-inner');
               if (inner) inner.style.width = e.currentTarget.scrollWidth + 'px';
+              const hdr = document.getElementById('header-scroll');
+              if (hdr) hdr.scrollLeft = e.currentTarget.scrollLeft;
             }}
             ref={(el) => {
               if (el) {
@@ -708,16 +740,12 @@ setRows(data);
               }
             }}
           >
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead style={{ position: 'sticky', top: filterBarHeight, zIndex: 30 }}>
-                <tr style={{ backgroundColor: C.navy, color: C.white }}>
-                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', width: '80px', textAlign: 'center', position: 'sticky', top: filterBarHeight, backgroundColor: C.navy }}>Diretoria</th>
-                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', minWidth: '220px', textAlign: 'left', position: 'sticky', top: filterBarHeight, backgroundColor: C.navy }}>Capacitação Técnica</th>
-                  {MONTHS.map((m) => (
-                    <th key={m} style={{ padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center', width: '78px', minWidth: '78px', position: 'sticky', top: filterBarHeight, backgroundColor: C.navy }}>{m}</th>
-                  ))}
-                </tr>
-              </thead>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: '80px' }} />
+                <col style={{ minWidth: '220px' }} />
+                {MONTHS.map((m) => <col key={m} style={{ width: '78px', minWidth: '78px' }} />)}
+              </colgroup>
               <tbody>
                 {calendarRows.map((training, idx) => (
                   <tr key={`${training.diretoria}-${idx}`} style={{ borderBottom: `1px solid ${C.gray100}` }}
@@ -744,7 +772,7 @@ setRows(data);
                     {MONTHS.map((m) => {
                       const cellItems = training.byMonth[m] || [];
                       return (
-                        <td key={m} style={{ padding: '6px 4px', textAlign: 'center', borderLeft: `1px solid ${C.gray100}`, width: '78px', minWidth: '78px', verticalAlign: 'middle' }}>
+                        <td key={m} style={{ padding: '6px 4px', textAlign: 'center', borderLeft: `1px solid ${C.gray100}`, verticalAlign: 'middle' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', minHeight: '40px', justifyContent: 'center' }}>
                             {cellItems.map((cls, ci) => {
                               const style = getStatusStyle(cls.status);
