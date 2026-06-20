@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Papa from 'papaparse';
 import {
   Filter,
@@ -324,6 +324,8 @@ const App = () => {
   const [filterStatuses, setFilterStatuses] = useState([]);
   const [openFilter, setOpenFilter] = useState(null);
   const [activeDetail, setActiveDetail] = useState(null);
+  const filterBarRef = useRef(null);
+  const [filterBarHeight, setFilterBarHeight] = useState(0);
 
   useEffect(() => {
     const parseSheet = (text) => new Promise((resolve) => {
@@ -411,6 +413,16 @@ setRows(data);
     const handleGlobalClick = () => { setOpenFilter(null); };
     window.addEventListener('click', handleGlobalClick);
     return () => window.removeEventListener('click', handleGlobalClick);
+  }, []);
+
+  useEffect(() => {
+    if (!filterBarRef.current) return;
+    const obs = new ResizeObserver(() => {
+      setFilterBarHeight(filterBarRef.current?.offsetHeight || 0);
+    });
+    obs.observe(filterBarRef.current);
+    setFilterBarHeight(filterBarRef.current.offsetHeight);
+    return () => obs.disconnect();
   }, []);
 
   const toggleMulti = (value, selected, setSelected) =>
@@ -581,7 +593,7 @@ setRows(data);
         })()}
 
         {/* FILTROS */}
-        <div style={{
+        <div ref={filterBarRef} style={{
           position: 'sticky', top: 0, zIndex: 40,
           backgroundColor: C.bg, padding: '8px 0',
           boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
@@ -697,12 +709,12 @@ setRows(data);
             }}
           >
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
+              <thead style={{ position: 'sticky', top: filterBarHeight, zIndex: 30 }}>
                 <tr style={{ backgroundColor: C.navy, color: C.white }}>
-                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', width: '80px', textAlign: 'center' }}>Diretoria</th>
-                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', minWidth: '220px', textAlign: 'left' }}>Capacitação Técnica</th>
+                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', width: '80px', textAlign: 'center', position: 'sticky', top: filterBarHeight, backgroundColor: C.navy }}>Diretoria</th>
+                  <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', minWidth: '220px', textAlign: 'left', position: 'sticky', top: filterBarHeight, backgroundColor: C.navy }}>Capacitação Técnica</th>
                   {MONTHS.map((m) => (
-                    <th key={m} style={{ padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center', width: '78px', minWidth: '78px' }}>{m}</th>
+                    <th key={m} style={{ padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center', width: '78px', minWidth: '78px', position: 'sticky', top: filterBarHeight, backgroundColor: C.navy }}>{m}</th>
                   ))}
                 </tr>
               </thead>
