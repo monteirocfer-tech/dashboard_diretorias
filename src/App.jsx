@@ -326,6 +326,12 @@ const App = () => {
   const [activeDetail, setActiveDetail] = useState(null);
   const filterBarRef = useRef(null);
   const [filterBarHeight, setFilterBarHeight] = useState(0);
+  const calHdrStuckRef = useRef(false);
+  const [calHdrStuck, setCalHdrStuck] = useState(false);
+  const [calHdrPos, setCalHdrPos] = useState({ left: 0, width: 0 });
+  const calSentinelRef = useRef(null);
+  const calCardRef = useRef(null);
+  const calHdrRef = useRef(null);
 
   useEffect(() => {
     const parseSheet = (text) => new Promise((resolve) => {
@@ -424,6 +430,35 @@ setRows(data);
     setFilterBarHeight(filterBarRef.current.offsetHeight);
     return () => obs.disconnect();
   }, []);
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (!calSentinelRef.current || !calCardRef.current) return;
+      const sTop = calSentinelRef.current.getBoundingClientRect().top;
+      const stuck = sTop <= filterBarHeight;
+      if (stuck !== calHdrStuckRef.current) {
+        calHdrStuckRef.current = stuck;
+        if (stuck) {
+          const r = calCardRef.current.getBoundingClientRect();
+          setCalHdrPos({ left: r.left, width: r.width });
+        }
+        setCalHdrStuck(stuck);
+      }
+    };
+    const onResize = () => {
+      if (calHdrStuckRef.current && calCardRef.current) {
+        const r = calCardRef.current.getBoundingClientRect();
+        setCalHdrPos({ left: r.left, width: r.width });
+      }
+      onScroll();
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [filterBarHeight]);
 
   const toggleMulti = (value, selected, setSelected) =>
     setSelected(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
@@ -679,42 +714,99 @@ setRows(data);
           </div>
         </div>
 
-        {/* CALENDÁRIO OPERACIONAL
-            Abordagem definitiva: container único com overflow:auto (cria scroll
-            container real para X e Y) + position:sticky nos <th>.
-            Dentro de um scroll container explícito, position:sticky funciona
-            independente de qualquer CSS ancestor externo.
-        */}
-        <div style={{
+        {/* Sentinel — marca onde o topo do calendário está no fluxo da página.
+            O scroll event compara este ponto com filterBarHeight para decidir
+            quando fixar o cabeçalho. */}
+        <div ref={calSentinelRef} style={{ height: 0 }} />
+
+        {/* CALENDÁRIO OPERACIONAL */}
+        <div ref={calCardRef} style={{
           background: C.white,
           borderRadius: '16px',
           border: `1px solid ${C.gray200}`,
           boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
-          overflow: 'auto',
-          maxHeight: `calc(100vh - ${filterBarHeight + 60}px)`,
+          overflow: 'hidden',
         }}>
-          <table style={{
-            width: '100%',
-            minWidth: `${80 + 220 + MONTHS.length * 78}px`,
-            borderCollapse: 'collapse',
-            tableLayout: 'fixed',
-          }}>
-            <colgroup>
-              <col style={{ width: '80px' }} />
-              <col style={{ width: '220px' }} />
-              {MONTHS.map((m) => <col key={m} style={{ width: '78px' }} />)}
-            </colgroup>
-            <thead>
-              <tr>
-                <th style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: C.navy, color: C.white, padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'center' }}>Diretoria</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: C.navy, color: C.white, padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'left' }}>Capacitação Técnica</th>
-                {MONTHS.map((m) => (
-                  <th key={m} style={{ position: 'sticky', top: 0, zIndex: 30, backgroundColor: C.navy, color: C.white, padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center' }}>{m}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {calendarRows.map((training, idx) => (
+          {/* Espaçador — mantém o layout quando o header está em position:fixed */}
+          {calHdrStuck && (
+            <div style={{ height: calHdrRef.current ? calHdrRef.current.offsetHeight : 44 }} />
+          )}
+
+          {/* Header — alterna entre fluxo normal e fixed via JS scroll event */}
+          <div
+            ref={calHdrRef}
+            style={calHdrStuck ? {
+              position: 'fixed',
+              top: filterBarHeight,
+              left: calHdrPos.left,
+              width: calHdrPos.width,
+              zIndex: 30,
+              backgroundColor: C.white,
+            } : {
+              backgroundColor: C.white,
+            }}
+          >
+            {/* Barra de scroll no topo — espelha o scroll da tabela */}
+            <div
+              id="top-scroll"
+              style={{ overflowX: 'auto', overflowY: 'hidden', height: '16px' }}
+              onScroll={(e) => {
+                const bottom = document.getElementById('table-scroll');
+                if (bottom) bottom.scrollLeft = e.currentTarget.scrollLeft;
+                const hdr = document.getElementById('header-scroll');
+                if (hdr) hdr.scrollLeft = e.currentTarget.scrollLeft;
+              }}
+            >
+              <div id="top-scroll-inner" style={{ height: '1px' }} />
+            </div>
+            {/* Linha dos meses */}
+            <div id="header-scroll" style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                <colgroup>
+                  <col style={{ width: '80px' }} />
+                  <col style={{ width: '220px' }} />
+                  {MONTHS.map((m) => <col key={m} style={{ width: '78px' }} />)}
+                </colgroup>
+                <thead>
+                  <tr style={{ backgroundColor: C.navy, color: C.white }}>
+                    <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'center' }}>Diretoria</th>
+                    <th style={{ padding: '12px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.14em', textAlign: 'left' }}>Capacitação Técnica</th>
+                    {MONTHS.map((m) => (
+                      <th key={m} style={{ padding: '10px 6px', fontSize: '9px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center' }}>{m}</th>
+                    ))}
+                  </tr>
+                </thead>
+              </table>
+            </div>
+          </div>
+
+          {/* Corpo da tabela — scroll horizontal independente */}
+          <div
+            id="table-scroll"
+            style={{ overflowX: 'auto' }}
+            onScroll={(e) => {
+              const top = document.getElementById('top-scroll');
+              if (top) top.scrollLeft = e.currentTarget.scrollLeft;
+              const inner = document.getElementById('top-scroll-inner');
+              if (inner) inner.style.width = e.currentTarget.scrollWidth + 'px';
+              const hdr = document.getElementById('header-scroll');
+              if (hdr) hdr.scrollLeft = e.currentTarget.scrollLeft;
+            }}
+            ref={(el) => {
+              if (el) {
+                const inner = document.getElementById('top-scroll-inner');
+                if (inner) inner.style.width = el.scrollWidth + 'px';
+              }
+            }}
+          >
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: '80px' }} />
+                <col style={{ width: '220px' }} />
+                {MONTHS.map((m) => <col key={m} style={{ width: '78px' }} />)}
+              </colgroup>
+              <tbody>
+                {calendarRows.map((training, idx) => (
                 <tr key={`${training.diretoria}-${idx}`} style={{ borderBottom: `1px solid ${C.gray100}` }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fafbff'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = C.white}
@@ -782,7 +874,8 @@ setRows(data);
               ))}
             </tbody>
           </table>
-        </div>
+          </div>{/* fecha table-scroll */}
+        </div>{/* fecha calCardRef */}
 
         {/* FOOTER */}
         <footer style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
