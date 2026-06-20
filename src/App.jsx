@@ -538,7 +538,7 @@ setRows(data);
                         display: 'flex', flexDirection: 'column', gap: '6px',
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: active ? meta.color : C.gray300 || C.gray400, flexShrink: 0 }} />
+                          <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: meta.color, flexShrink: 0, opacity: active ? 1 : 0.35 }} />
                           <span style={{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.09em', color: active ? C.slate : C.gray400, lineHeight: 1 }}>{s}</span>
                         </div>
                         <p style={{ fontSize: '20px', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.3px', color: active ? meta.softColor : C.gray400 }}>{pct}%</p>
